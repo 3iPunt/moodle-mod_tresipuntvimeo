@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<libraries>
+    <library>
+        <location>.extlib/vendor/vimeo/vimeo-api</location>
+        <name>vimeo-api</name>
+        <version>3.0.8</version>
+        <license>apache</license>
+        <licenseversion>2.0</licenseversion>
+    </library>
+    <library>
+        <location>.extlib/vendor/ankitpokhrel/tus-php</location>
+        <name>TusPhp</name>
+        <version>2.4.0</version>
+        <license>MIT</license>
+    </library>
+</libraries>

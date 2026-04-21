@@ -1,0 +1,15 @@
+{
+    "name": "tresipunt/videoconnect",
+    "description": "Moodle Module for Vimeo Videos",
+    "type": "moodle-pluging",
+    "require": {
+        "vimeo/vimeo-api": "^3.0"
+    },
+    "license": "GNU GPL v3",
+    "authors": [
+        {
+            "name": "Tresipunt",
+            "email": "moodle@tresipunt.com"
+        }
+    ]
+}

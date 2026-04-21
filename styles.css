@@ -1,0 +1,44 @@
+div[data-region="mod_videoconnect"] .iframe_container {
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    border: none;
+}
+
+div[data-region="mod_videoconnect"] .intro {
+    padding: 60px;
+}
+
+div[data-region="mod_videoconnect"] .alert {
+    margin: 60px;
+}
+
+div[data-region="mod_videoconnect"] .response {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+div[data-region="mod_videoconnect"] .response .card-content {
+    background-color: black;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    width: 640px;
+    height: 360px;
+    padding: 50px;
+    text-align: center;
+}
+
+div[data-region="mod_videoconnect"] .response .card-content .title {
+    font-size: 55px;
+    font-weight: 600;
+}
+
+div[data-region="mod_videoconnect"] .response .card-content .description {
+    font-size: 24px;
+}
+
