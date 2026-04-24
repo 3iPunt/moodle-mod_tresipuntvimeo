@@ -1,0 +1,77 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_videoconnect/view_page
+    Main content for the Tresipunt Vimeo module view page.
+    Classes required for JS:
+    * none
+    Data attributes required for JS:
+    * data-region="mod_videoconnect"
+    Context variables required for this template:
+    * has_name: boolean - Whether the module has a name.
+    * name: string - The name of the module.
+    * has_vimeo: boolean - Whether the module has a Vimeo video.
+    * idvideo: string - The ID of the Vimeo video.
+    * width: string - The width of the Vimeo video iframe.
+    * height: string - The height of the Vimeo video iframe.
+    * frameborder: string - The frameborder attribute for the Vimeo video iframe.
+    * title: string - The title of the Vimeo video.
+    * status: string - The status message if there is no Vimeo video.
+    * http_error_message: string - The HTTP error message if there is no Vimeo video.
+    * intro: string - The introduction text for the module.
+    Example context (json):
+    {
+        "has_name": true,
+        "name": "Sample Vimeo Module",
+        "has_vimeo": true,
+        "idvideo": "123456789",
+        "width": "640",
+        "height": "360",
+        "frameborder": "0",
+        "title": "Sample Video",
+        "status": "Video not available",
+        "http_error_message": "There was an error loading the video.",
+        "intro": "<p>This is an introduction to the Vimeo module.</p>"
+    }
+}}
+<div data-region="mod_videoconnect">
+    {{# has_name }}
+    <h2>{{ name }}</h2>
+    {{/has_name}}
+    {{# has_vimeo }}
+    <div class="iframe_container">
+        <iframe src="https://player.vimeo.com/video/{{ idvideo }}?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                width="{{ width }}"
+                height="{{ height }}"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowfullscreen
+                title="{{ title }}">
+        </iframe>
+    </div>
+    {{/ has_vimeo }}
+    {{^ has_vimeo }}
+        <div class="response">
+            <div class="card-content">
+                <p class="title">{{# str }} we_are_sorry, mod_videoconnect {{/ str }}</p>
+                <p class="description">{{ status }}</p>
+                {{# has_name }}
+                    <p>{{ http_error_message }}</p>
+                {{/has_name}}
+            </div>
+        </div>
+    {{/ has_vimeo }}
+    <div class="intro">{{{ intro }}}</div>
+</div>
+
+
