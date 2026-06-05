@@ -22,8 +22,6 @@
  * @author     3IPUNT <contacte@tresipunt.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-defined('MOODLE_INTERNAL') || die();
-
 use mod_videoconnect\output\view_page;
 use mod_videoconnect\uploads;
 /**
@@ -68,24 +66,23 @@ function videoconnect_add_instance(object $moduleinstance, $mform = null): int {
 }
 
 /**
- * Given a course_module object, this function returns any
- * "extra" information that may be needed when printing
- * this activity in a course listing.
- * See get_array_of_activities() in course/lib.php
+ * Sets the activity content shown inline on the course page.
  *
- * @param object $coursemodule
- * @return cached_cm_info|null
+ * The render happens here — at actual view time, when $PAGE is fully
+ * initialised — instead of in get_coursemodule_info(): that callback runs
+ * during course cache rebuilds (cron, CLI, restore), where rendering a
+ * template and querying per instance is both fragile and wasteful.
+ *
+ * @param cm_info $cm
  * @throws coding_exception
  * @throws moodle_exception
  */
-function videoconnect_get_coursemodule_info(object $coursemodule): cached_cm_info {
-    global $PAGE;
+function videoconnect_cm_info_view(cm_info $cm): void {
+    global $DB, $PAGE;
+    $instance = $DB->get_record('videoconnect', ['id' => $cm->instance], '*', MUST_EXIST);
+    $lastupload = empty($instance->idvideo) ? uploads::get_latest($instance->id) : null;
     $output = $PAGE->get_renderer('mod_videoconnect');
-    $page = new view_page($coursemodule->id, false);
-    $content = $output->render($page);
-    $info = new cached_cm_info();
-    $info->content = $content;
-    return $info;
+    $cm->set_content($output->render(new view_page($instance, false, $lastupload)), true);
 }
 
 /**

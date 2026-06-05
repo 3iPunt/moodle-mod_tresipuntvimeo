@@ -19,14 +19,14 @@
  *
  * @package     mod_videoconnect
  * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
- * @author     3IPUNT <contacte@tresipunt.com>
+ * @author      3IPUNT <contacte@tresipunt.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_videoconnect';
-$plugin->release = '1.1.0';
-$plugin->version = 2026042100;
+$plugin->release = '2.0.0';
+$plugin->version = 2026060502;
 $plugin->requires = 2023111300; // Moodle 4.3.0+.
 $plugin->maturity = MATURITY_STABLE;

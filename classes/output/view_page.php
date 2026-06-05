@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Block Video Connect Support renderable
+ * Video Connect view renderable.
  *
  * @package    mod_videoconnect
  * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
@@ -26,7 +26,6 @@
 namespace mod_videoconnect\output;
 
 use coding_exception;
-use dml_exception;
 use mod_videoconnect\uploads;
 use renderable;
 use renderer_base;
@@ -35,7 +34,11 @@ use templatable;
 
 
 /**
- * Main_content renderable class.
+ * Main content renderable class.
+ *
+ * Pure view: it receives all the data it needs and performs no DB access.
+ * Callers fetch the {videoconnect} record (and, when there is no published
+ * video yet, the latest upload attempt via uploads::get_latest()).
  *
  * @package    mod_videoconnect
  * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
@@ -43,23 +46,27 @@ use templatable;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class view_page implements renderable, templatable {
-    /** @var stdClass Course Module */
-    protected $cm;
+    /** @var stdClass Activity instance record ({videoconnect}). */
+    protected stdClass $instance;
 
     /** @var bool Has name? */
-    protected $hasname;
+    protected bool $hasname;
+
+    /** @var stdClass|null Latest {videoconnect_uploads} row, if relevant. */
+    protected ?stdClass $lastupload;
 
     /**
      * view_page constructor.
      *
-     * @param int $cmid
-     * @param bool $ithasname
-     * @throws dml_exception
+     * @param stdClass $instance Record from {videoconnect}.
+     * @param bool $ithasname Whether to render the activity name heading.
+     * @param stdClass|null $lastupload Latest upload attempt; only used when
+     *        the instance has no idvideo yet (pending/failed upload state).
      */
-    public function __construct(int $cmid, bool $ithasname = true) {
-        global $DB;
+    public function __construct(stdClass $instance, bool $ithasname = true, ?stdClass $lastupload = null) {
+        $this->instance = $instance;
         $this->hasname = $ithasname;
-        $this->cm = $DB->get_record('course_modules', ['id' => $cmid]);
+        $this->lastupload = $lastupload;
     }
 
 
@@ -68,40 +75,27 @@ class view_page implements renderable, templatable {
      *
      * @param renderer_base $output
      * @return stdClass
-     * @throws dml_exception
      * @throws coding_exception
      */
     public function export_for_template(renderer_base $output): stdClass {
-        global $DB;
-        $vimeomodule = $DB->get_record('videoconnect', ['id' => $this->cm->instance]);
-        $vimeoupload = $DB->get_records(
-            'videoconnect_uploads',
-            ['instance' => $this->cm->instance],
-            'timecreated DESC',
-            '*',
-            0,
-            1
-        );
         $data = new stdClass();
-        $data->name = $vimeomodule->name;
+        $data->name = $this->instance->name;
         $data->has_name = $this->hasname;
-        $data->intro = $vimeomodule->intro;
-        $data->is_completed = false;
-        if (!empty($vimeomodule->idvideo)) {
-            $data->idvideo = $vimeomodule->idvideo;
+        $data->intro = $this->instance->intro;
+        if (!empty($this->instance->idvideo)) {
+            $data->idvideo = $this->instance->idvideo;
             $data->width = '640';
             $data->height = '360';
             $data->has_vimeo = true;
         } else {
             $data->has_vimeo = false;
-            $data->title = $vimeomodule->name;
-            if (!empty($vimeoupload)) {
-                $vimeoupload = current($vimeoupload);
+            $data->title = $this->instance->name;
+            if ($this->lastupload) {
                 $data->status = get_string(
-                    uploads::ERROR_MESSAGE[$vimeoupload->status],
+                    uploads::ERROR_MESSAGE[$this->lastupload->status],
                     'mod_videoconnect'
                 );
-                $data->http_error_message = $vimeoupload->http_error_message;
+                $data->http_error_message = $this->lastupload->http_error_message;
             }
         }
 

@@ -1,11 +1,14 @@
 {
     "name": "tresipunt/videoconnect",
     "description": "Moodle Module for Vimeo Videos",
-    "type": "moodle-pluging",
+    "type": "moodle-plugin",
     "require": {
-        "vimeo/vimeo-api": "^3.0"
+        "vimeo/vimeo-api": "^4.0"
     },
-    "license": "GNU GPL v3",
+    "config": {
+        "vendor-dir": ".extlib/vendor"
+    },
+    "license": "GPL-3.0-or-later",
     "authors": [
         {
             "name": "Tresipunt",

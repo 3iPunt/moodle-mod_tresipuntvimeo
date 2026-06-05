@@ -25,11 +25,14 @@
 
 namespace mod_videoconnect\output;
 
-use moodle_exception;
 use plugin_renderer_base;
 
 /**
  * Module Video Connect Renderer.
+ *
+ * Renderables of this plugin implement templatable, so render() resolves
+ * the Mustache template by naming convention; no custom render_* methods
+ * are needed.
  *
  * @package    mod_videoconnect
  * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
@@ -37,15 +40,4 @@ use plugin_renderer_base;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class renderer extends plugin_renderer_base {
-    /**
-     * Defer to template.
-     *
-     * @param view_page $viewpage
-     * @return bool|string
-     * @throws moodle_exception
-     */
-    public function render_maincontent_form(view_page $viewpage) {
-        $data = $viewpage->export_for_template($this);
-        return parent::render_from_template('mod_videoconnect/view_page', $data);
-    }
 }
