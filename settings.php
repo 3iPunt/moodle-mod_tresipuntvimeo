@@ -27,9 +27,40 @@ defined('MOODLE_INTERNAL') || die();
 
 global $ADMIN, $CFG;
 
+// Carpeta "Video Connect" en Extensiones > Módulos de actividad con sus
+// páginas dentro, como hace mod_assign. Solo la ven administradores: el core
+// no carga el settings.php de un mod sin moodle/site:config; los gestores
+// con mod/videoconnect:configure acceden a manage.php por URL directa (la
+// página valida la capability por sí misma).
+$ADMIN->add('modsettings', new admin_category(
+    'modvideoconnectfolder',
+    new lang_string('pluginname', 'mod_videoconnect'),
+    $module->is_enabled() === false
+));
+
+// La settingpage estándar (sección modsettingvideoconnect) pasa a colgar de
+// la carpeta; al final del archivo se anula $settings para que el cargador
+// del core no la añada también a Módulos de actividad.
+$settings->visiblename = new lang_string('settings');
+$ADMIN->add('modvideoconnectfolder', $settings);
+
+$ADMIN->add('modvideoconnectfolder', new admin_externalpage(
+    'mod_videoconnect_manage',
+    new lang_string('managesettings', 'mod_videoconnect'),
+    $CFG->wwwroot . '/mod/videoconnect/manage.php',
+    'mod/videoconnect:configure'
+));
+
+$ADMIN->add('modvideoconnectfolder', new admin_externalpage(
+    'mod_videoconnect_panel',
+    new lang_string('panel', 'mod_videoconnect'),
+    $CFG->wwwroot . '/mod/videoconnect/panel.php',
+    'mod/videoconnect:managevideos'
+));
+
 if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_heading(
-        'tresipuntcsvexport/csvsettings',
+        'mod_videoconnect/vimeosettings',
         get_string('vimeoheading', 'mod_videoconnect'),
         get_string('vimeoheadingdesc', 'mod_videoconnect')
     ));
@@ -43,13 +74,11 @@ if ($ADMIN->fulltree) {
         70
     ));
 
-    $settings->add(new admin_setting_configtext(
+    $settings->add(new admin_setting_configpasswordunmask(
         'mod_videoconnect/client_secret',
         get_string('client_secret', 'mod_videoconnect'),
         '',
-        '',
-        PARAM_RAW,
-        70
+        ''
     ));
 
     $settings->add(new admin_setting_configcheckbox(
@@ -59,13 +88,11 @@ if ($ADMIN->fulltree) {
         false
     ));
 
-    $settings->add(new admin_setting_configtext(
+    $settings->add(new admin_setting_configpasswordunmask(
         'mod_videoconnect/access_token',
         get_string('access_token', 'mod_videoconnect'),
         '',
-        '',
-        PARAM_RAW,
-        70
+        ''
     ));
 
     $settings->add(new admin_setting_configmulticheckbox(
@@ -90,17 +117,29 @@ if ($ADMIN->fulltree) {
         ]
     ));
 
-    $settings->add(new admin_setting_configtext(
+    $settings->add(new admin_setting_configcheckbox(
+        'mod_videoconnect/usewhitelist',
+        get_string('usewhitelist', 'mod_videoconnect'),
+        get_string('usewhitelist_desc', 'mod_videoconnect'),
+        1
+    ));
+
+    $settings->add(new \mod_videoconnect\admin\setting_whitelist(
         'mod_videoconnect/whitelist',
         get_string('whitelist', 'mod_videoconnect'),
         get_string('whitelist_desc', 'mod_videoconnect'),
         parse_url($CFG->wwwroot, PHP_URL_HOST)
     ));
+    $settings->hide_if('mod_videoconnect/whitelist', 'mod_videoconnect/usewhitelist', 'notchecked');
 
-    $settings->add(new admin_setting_configtext(
+    $settings->add(new \mod_videoconnect\admin\setting_folderid(
         'mod_videoconnect/folderid',
         get_string('folderid', 'mod_videoconnect'),
         get_string('folderid_desc', 'mod_videoconnect'),
         0
     ));
 }
+
+// Ya añadida dentro de la carpeta modvideoconnectfolder: evitar que el
+// cargador del core la añada de nuevo directamente a Módulos de actividad.
+$settings = null;

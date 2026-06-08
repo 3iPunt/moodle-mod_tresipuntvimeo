@@ -95,7 +95,10 @@ class mod_videoconnect_mod_form extends moodleform_mod {
             'client'
         );
 
-        $mform->setType('idvideo', PARAM_INT);
+        // Raw on purpose: accepts a numeric ID or a pasted Vimeo URL; it is
+        // validated in validation() and normalised to the numeric ID in
+        // data_postprocessing().
+        $mform->setType('idvideo', PARAM_RAW_TRIMMED);
         $mform->addHelpButton('idvideo', 'idvideo', 'mod_videoconnect');
 
         $filemanageroptions['accepted_types'] = ['.mp4', '.mov', '.wmv', '.avi', '.flv'];
@@ -116,5 +119,58 @@ class mod_videoconnect_mod_form extends moodleform_mod {
 
         // Add standard buttons.
         $this->add_action_buttons();
+    }
+
+    /**
+     * Extracts the numeric Vimeo video ID from a raw value.
+     *
+     * Accepts a plain numeric ID or a Vimeo video URL (vimeo.com/<id>,
+     * player.vimeo.com/video/<id>, vimeo.com/manage/videos/<id>, ...).
+     * Unlisted videos with a privacy hash are not supported: the module
+     * relies on domain-whitelist embed privacy, not on hashes.
+     *
+     * @param string $value Raw user input.
+     * @return string|null Numeric ID, '' when empty, or null when invalid.
+     */
+    public static function extract_idvideo(string $value): ?string {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+        if (preg_match('~^\d+$~', $value)) {
+            return $value;
+        }
+        if (preg_match('~^(?:https?://)?(?:www\.)?(?:player\.)?vimeo\.com/(?:[a-z]+/)*(?:video/)?(\d+)~i', $value, $matches)) {
+            return $matches[1];
+        }
+        return null;
+    }
+
+    /**
+     * Validates the form data.
+     *
+     * @param array $data
+     * @param array $files
+     * @return array
+     * @throws coding_exception
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+        if (!empty($data['idvideo']) && self::extract_idvideo($data['idvideo']) === null) {
+            $errors['idvideo'] = get_string('idvideo_invalid', 'mod_videoconnect');
+        }
+        return $errors;
+    }
+
+    /**
+     * Normalises idvideo to the plain numeric ID before it is saved.
+     *
+     * @param stdClass $data Form data.
+     */
+    public function data_postprocessing($data) {
+        parent::data_postprocessing($data);
+        if (isset($data->idvideo)) {
+            $data->idvideo = (string) (self::extract_idvideo($data->idvideo) ?? '');
+        }
     }
 }

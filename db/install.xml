@@ -26,7 +26,6 @@
         <FIELD NAME="instance" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Course Module Instance"/>
         <FIELD NAME="filepath" TYPE="char" LENGTH="1000" NOTNULL="false" SEQUENCE="false" COMMENT="Video filepath to upload to Vimeo"/>
         <FIELD NAME="status" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Status uploading"/>
-        <FIELD NAME="http_status_code" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Status code HTTP request"/>
         <FIELD NAME="http_response" TYPE="char" LENGTH="1300" NOTNULL="false" SEQUENCE="false" COMMENT="Response HTTP request encode"/>
         <FIELD NAME="http_error_message" TYPE="char" LENGTH="1000" NOTNULL="false" SEQUENCE="false" COMMENT="Error message HTTP request"/>
         <FIELD NAME="http_error_code" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Error code HTTP request"/>

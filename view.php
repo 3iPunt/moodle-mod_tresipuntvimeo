@@ -85,7 +85,10 @@ if ($cmfound) {
     $PAGE->set_context($modulecontext);
     echo $OUTPUT->header();
     $output = $PAGE->get_renderer('mod_videoconnect');
-    $page = new view_page($cm->id);
+    $lastupload = empty($moduleinstance->idvideo)
+        ? \mod_videoconnect\uploads::get_latest($moduleinstance->id)
+        : null;
+    $page = new view_page($moduleinstance, true, $lastupload);
     echo $output->render($page);
 } else {
     require_login();
