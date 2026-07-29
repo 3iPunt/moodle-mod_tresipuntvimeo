@@ -23,11 +23,14 @@
  */
 
 /**
- * Define all the restore steps that will be used by the restore_url_activity_task
- */
-
-/**
- * Structure step to restore one videoconnect activity
+ * Structure step to restore one videoconnect activity.
+ *
+ * Old backups without the provider field restore with the DB default
+ * ('vimeo'), which is correct: every pre-2.1.0 video is a Vimeo video.
+ *
+ * @package    mod_videoconnect
+ * @copyright  2024 Tresipunt
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_videoconnect_activity_structure_step extends restore_activity_structure_step {
     /**

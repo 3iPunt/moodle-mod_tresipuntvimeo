@@ -26,7 +26,9 @@
 namespace mod_videoconnect\output;
 
 use coding_exception;
+use mod_videoconnect\provider\provider_interface;
 use mod_videoconnect\uploads;
+use moodle_url;
 use renderable;
 use renderer_base;
 use stdClass;
@@ -37,9 +39,10 @@ use templatable;
  *
  * Pure view (no DB access): receives the counters per state, the active
  * filters (with the course name already resolved by the controller), the
- * rendered table and the optional warning. The filter toolbar is built in
- * the template (the course field is enhanced with the core AJAX course
- * selector) so every control shares the same layout and height.
+ * rendered table with its row count, and the optional cron warning. The
+ * whole filter toolbar is a single GET form (course scope included), so it
+ * keeps working without JavaScript; the AMD module only enhances the course
+ * select with the core AJAX course selector.
  *
  * @package    mod_videoconnect
  * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
@@ -47,53 +50,58 @@ use templatable;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class panel_page implements renderable, templatable {
-    /** @var string[] Card border CSS class per derived state. */
-    protected const CARDS = [
-        uploads::STATE_PUBLISHED => 'border-success',
-        uploads::STATE_INCIDENT => 'border-warning',
-        uploads::STATE_PENDING => 'border-info',
-        uploads::STATE_ERROR => 'border-danger',
-        uploads::STATE_NOVIDEO => 'border-secondary',
-    ];
-
-    /** @var string[] Badge CSS class per derived state (same key as the table). */
-    protected const BADGES = [
-        uploads::STATE_PUBLISHED => 'badge text-bg-success',
-        uploads::STATE_INCIDENT => 'badge text-bg-warning',
-        uploads::STATE_PENDING => 'badge text-bg-info',
-        uploads::STATE_ERROR => 'badge text-bg-danger',
-        uploads::STATE_NOVIDEO => 'badge text-bg-secondary',
-    ];
-
     /** @var array Counters per derived state (state => count). */
     protected array $summary;
 
-    /** @var array Active filters: state, courseid, coursename, search. */
+    /** @var array Active filters: state, courseid, coursename, search, datefrom, dateto. */
     protected array $filters;
 
     /** @var string Rendered table HTML. */
     protected string $table;
 
+    /** @var int Rows in the current (filtered) table. */
+    protected int $totalrows;
+
+    /** @var bool Whether the whole site has at least one activity. */
+    protected bool $hasactivities;
+
     /** @var string|null Warning message (e.g. stale cron), null when none. */
     protected ?string $warning;
+
+    /** @var moodle_url|null Settings URL for users who can configure, null otherwise. */
+    protected ?moodle_url $settingsurl;
+
+    /** @var provider_interface|null Active provider connector (header branding). */
+    protected ?provider_interface $provider;
 
     /**
      * panel_page constructor.
      *
      * @param array $summary Counters per derived state (state => count).
      * @param array $filters Active filters: state (string), courseid (int),
-     *        coursename (string, resolved by the controller) and search (string).
+     *        coursename (string, resolved by the controller), search (string),
+     *        datefrom (string ISO) and dateto (string ISO).
      * @param string $table Rendered table HTML.
+     * @param int $totalrows Rows matched by the current filters.
+     * @param bool $hasactivities Whether the site has any activity at all.
      * @param string|null $warning Warning message to highlight, if any.
+     * @param moodle_url|null $settingsurl Plugin settings URL when the user may configure.
+     * @param provider_interface|null $provider Active provider connector.
      */
-    public function __construct(array $summary, array $filters, string $table, ?string $warning = null) {
+    public function __construct(array $summary, array $filters, string $table, int $totalrows,
+            bool $hasactivities, ?string $warning = null, ?moodle_url $settingsurl = null,
+            ?provider_interface $provider = null) {
         $this->summary = $summary;
         $this->filters = $filters + [
             'state' => '', 'courseid' => 0, 'coursename' => '', 'search' => '',
             'datefrom' => '', 'dateto' => '',
         ];
         $this->table = $table;
+        $this->totalrows = $totalrows;
+        $this->hasactivities = $hasactivities;
         $this->warning = $warning;
+        $this->settingsurl = $settingsurl;
+        $this->provider = $provider;
     }
 
     /**
@@ -113,24 +121,38 @@ class panel_page implements renderable, templatable {
         ]);
 
         $data = new stdClass();
+        $data->logotresipunt = $output->image_url('tresipunt_logo', 'mod_videoconnect')->out(false);
+        $logopix = $this->provider ? $this->provider->get_logo_pix() : 'icon';
+        $data->logoprovider = $output->image_url($logopix, 'mod_videoconnect')->out(false);
+        $data->providername = $this->provider ? $this->provider->get_display_name() : '';
+        $data->headertitle = get_string('panel', 'mod_videoconnect');
+        $data->headerdesc = get_string('panel_desc', 'mod_videoconnect');
+        $data->updated = userdate(time(), get_string('strftimedatetimeshort', 'langconfig'));
+        $data->refreshurl = (new moodle_url('/mod/videoconnect/panel.php',
+            $baseparams + ($currentstate !== '' ? ['state' => $currentstate] : [])))->out(false);
+        $data->settingsurl = $this->settingsurl ? $this->settingsurl->out(false) : null;
+
+        $data->warning = $this->warning;
+
         $data->counters = [];
         foreach (uploads::STATES as $state) {
             $active = ($state === $currentstate);
             // Las tarjetas actúan como filtro rápido: clic filtra por el
             // estado; clic sobre la activa quita el filtro (toggle).
             $params = $baseparams + ($active ? [] : ['state' => $state]);
+            $badge = badges::state_badge($state);
             $data->counters[] = [
                 'state' => $state,
-                'label' => uploads::get_state_label($state),
+                'label' => $badge['label'],
+                'icon' => $badge['icon'],
+                'tone' => $badge['tone'],
                 'count' => $this->summary[$state] ?? 0,
-                'cardclass' => self::CARDS[$state] ?? 'border-secondary',
-                'badgeclass' => self::BADGES[$state] ?? 'badge text-bg-secondary',
                 'active' => $active,
-                'url' => (new \moodle_url('/mod/videoconnect/panel.php', $params))->out(false),
+                'url' => (new moodle_url('/mod/videoconnect/panel.php', $params))->out(false),
             ];
         }
 
-        $data->action = (new \moodle_url('/mod/videoconnect/panel.php'))->out(false);
+        $data->action = (new moodle_url('/mod/videoconnect/panel.php'))->out(false);
         $data->currentstate = $currentstate;
         $data->states = [];
         foreach (uploads::STATES as $state) {
@@ -147,12 +169,14 @@ class panel_page implements renderable, templatable {
         $data->dateto = (string) $this->filters['dateto'];
         $data->hasfilters = ($currentstate !== '' || !empty($this->filters['courseid'])
             || $data->search !== '' || $data->datefrom !== '' || $data->dateto !== '');
-        // El reset limpia estado y búsqueda pero conserva el ámbito de curso.
-        $data->reseturl = (new \moodle_url('/mod/videoconnect/panel.php',
-            $data->courseid ? ['courseid' => $data->courseid] : []))->out(false);
+        $data->reseturl = (new moodle_url('/mod/videoconnect/panel.php'))->out(false);
 
+        // Estados de la zona de resultados: tabla, "sin resultados" (hay
+        // actividades pero los filtros no casan) o vacío inicial del sitio.
+        $data->hasrows = ($this->totalrows > 0);
+        $data->noresults = (!$data->hasrows && $this->hasactivities);
+        $data->emptyinitial = !$this->hasactivities;
         $data->table = $this->table;
-        $data->warning = $this->warning;
         return $data;
     }
 }

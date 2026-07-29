@@ -25,6 +25,10 @@
 
 namespace mod_videoconnect\table;
 
+use html_writer;
+use mod_videoconnect\output\badges;
+use mod_videoconnect\provider\provider_interface;
+use mod_videoconnect\provider\provider_manager;
 use mod_videoconnect\uploads;
 use moodle_url;
 use stdClass;
@@ -46,14 +50,8 @@ require_once($CFG->libdir . '/tablelib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class videos_table extends table_sql {
-    /** @var string[] Badge CSS class per derived state. */
-    protected const BADGES = [
-        uploads::STATE_PUBLISHED => 'badge text-bg-success',
-        uploads::STATE_INCIDENT => 'badge text-bg-warning',
-        uploads::STATE_PENDING => 'badge text-bg-info',
-        uploads::STATE_ERROR => 'badge text-bg-danger',
-        uploads::STATE_NOVIDEO => 'badge text-bg-secondary',
-    ];
+    /** @var provider_interface Active provider connector (video links). */
+    protected provider_interface $provider;
 
     /**
      * videos_table constructor.
@@ -72,19 +70,19 @@ class videos_table extends table_sql {
         global $DB;
         parent::__construct($uniqueid);
 
+        $this->provider = provider_manager::get_active();
         $this->define_baseurl($baseurl);
-        $this->define_columns(['coursename', 'name', 'state', 'idvideo', 'uploads', 'timemodified']);
+        $this->define_columns(['name', 'state', 'idvideo', 'timemodified', 'actions']);
         $this->define_headers([
-            get_string('course'),
             get_string('activity'),
             get_string('videostate', 'mod_videoconnect'),
-            get_string('idvideo', 'mod_videoconnect'),
-            get_string('uploadattempts', 'mod_videoconnect'),
-            get_string('lastmodified'),
+            get_string('video', 'mod_videoconnect'),
+            get_string('lastupload', 'mod_videoconnect'),
+            get_string('actions'),
         ]);
         $this->sortable(true, 'timemodified', SORT_DESC);
         $this->no_sorting('idvideo');
-        $this->no_sorting('uploads');
+        $this->no_sorting('actions');
         $this->collapsible(false);
         $this->set_attribute('class', 'generaltable mod_videoconnect-panel-table');
 
@@ -95,7 +93,6 @@ class videos_table extends table_sql {
                    c.id AS courseid, c.fullname AS coursename, cm.id AS cmid,
                    u.id AS uploadid, u.status AS uploadstatus,
                    u.error_message, u.http_error_message,
-                   (SELECT COUNT(1) FROM {videoconnect_uploads} u3 WHERE u3.instance = v.id) AS numuploads,
                    {$case} AS state";
 
         $where = '1 = 1';
@@ -126,45 +123,45 @@ class videos_table extends table_sql {
     }
 
     /**
-     * Course name linked to the course.
-     *
-     * @param stdClass $row
-     * @return string
-     */
-    public function col_coursename(stdClass $row): string {
-        $url = new moodle_url('/course/view.php', ['id' => $row->courseid]);
-        return \html_writer::link($url, format_string($row->coursename));
-    }
-
-    /**
-     * Activity name linked to its view page.
+     * Activity name linked to its view page, with the course underneath.
      *
      * @param stdClass $row
      * @return string
      */
     public function col_name(stdClass $row): string {
-        $url = new moodle_url('/mod/videoconnect/view.php', ['id' => $row->cmid]);
-        return \html_writer::link($url, format_string($row->name));
+        $activityurl = new moodle_url('/mod/videoconnect/view.php', ['id' => $row->cmid]);
+        $courseurl = new moodle_url('/course/view.php', ['id' => $row->courseid]);
+        return html_writer::link($activityurl, format_string($row->name), ['class' => 'vc-row-title'])
+            . html_writer::div(
+                html_writer::link($courseurl, format_string($row->coursename), ['class' => 'text-muted']),
+                'vc-row-sub small'
+            );
     }
 
     /**
-     * Derived state rendered as a badge, with the upload error message
-     * underneath (truncated) for error/incident rows: the admin sees what
-     * happened without entering the detail.
+     * Derived state rendered as a badge (C1), with a short human message
+     * underneath for error/incident rows: the admin sees what happened
+     * without entering the detail.
      *
      * @param stdClass $row
      * @return string
      * @throws \coding_exception
      */
     public function col_state(stdClass $row): string {
-        $class = self::BADGES[$row->state] ?? 'badge text-bg-secondary';
-        $html = \html_writer::span(uploads::get_state_label($row->state), $class);
+        $html = $this->badge(badges::state_badge($row->state));
         if (in_array($row->state, [uploads::STATE_ERROR, uploads::STATE_INCIDENT], true)) {
-            $message = trim($row->http_error_message ?? '') ?: trim($row->error_message ?? '');
+            $message = trim($row->http_error_message ?? '');
+            if ($message === '') {
+                // error_message guarda claves internas (p. ej. id_video_missing):
+                // mostrar la etiqueta de diagnóstico traducida, nunca la clave.
+                $message = $row->uploadstatus !== null
+                    ? uploads::get_status_label((int) $row->uploadstatus)
+                    : trim($row->error_message ?? '');
+            }
             if ($message !== '') {
-                $html .= \html_writer::div(
+                $html .= html_writer::div(
                     s(shorten_text($message, 70)),
-                    'small text-muted mt-1',
+                    'vc-row-sub small text-muted',
                     ['title' => s($message)]
                 );
             }
@@ -173,50 +170,72 @@ class videos_table extends table_sql {
     }
 
     /**
-     * Vimeo video ID linked to the video on Vimeo.
+     * Video ID linked to the provider.
      *
      * @param stdClass $row
      * @return string
      */
     public function col_idvideo(stdClass $row): string {
         if (empty($row->idvideo)) {
-            return '-';
+            return html_writer::span('—', 'text-muted');
         }
-        return \html_writer::link(
-            'https://vimeo.com/' . $row->idvideo,
+        return html_writer::link(
+            $this->provider->get_video_url((string) $row->idvideo),
             s($row->idvideo),
-            ['target' => '_blank', 'rel' => 'noopener']
+            ['target' => '_blank', 'rel' => 'noopener', 'class' => 'vc-link']
         );
     }
 
     /**
-     * Upload attempts: explicit button to the detail view, where the
-     * retry/discard actions live.
+     * Last activity date plus a mini badge (C2) of the last upload attempt.
      *
      * @param stdClass $row
      * @return string
      * @throws \coding_exception
      */
-    public function col_uploads(stdClass $row): string {
-        if (empty($row->numuploads)) {
-            return '-';
+    public function col_timemodified(stdClass $row): string {
+        $time = $row->timemodified ?: $row->timecreated;
+        $html = html_writer::span(
+            $time ? userdate($time, get_string('strftimedatetimeshort', 'langconfig')) : '—'
+        );
+        if ($row->uploadstatus !== null) {
+            $html .= html_writer::div($this->badge(badges::status_badge((int) $row->uploadstatus), true), 'mt-1');
         }
+        return $html;
+    }
+
+    /**
+     * Explicit action to the detail view, where retry/discard live.
+     *
+     * @param stdClass $row
+     * @return string
+     * @throws \coding_exception
+     */
+    public function col_actions(stdClass $row): string {
         $url = new moodle_url('/mod/videoconnect/panel.php', ['instanceid' => $row->id]);
-        return \html_writer::link(
+        $label = get_string('viewdetail', 'mod_videoconnect');
+        return html_writer::link(
             $url,
-            get_string('manageuploads', 'mod_videoconnect') . ' (' . $row->numuploads . ')',
-            ['class' => 'btn btn-sm btn-outline-primary text-nowrap']
+            html_writer::tag('i', '', ['class' => 'fa fa-eye', 'aria-hidden' => 'true']),
+            ['class' => 'btn btn-outline-secondary btn-sm vc-action-btn', 'title' => $label, 'aria-label' => $label]
         );
     }
 
     /**
-     * Last modification time.
+     * Renders a vc-badge pill from badge data (icon, tone, spin, label).
      *
-     * @param stdClass $row
+     * @param array $badge Badge data from badges::state_badge()/status_badge().
+     * @param bool $mini Whether to render the small row variant.
      * @return string
      */
-    public function col_timemodified(stdClass $row): string {
-        $time = $row->timemodified ?: $row->timecreated;
-        return $time ? userdate($time, get_string('strftimedatetimeshort', 'langconfig')) : '-';
+    protected function badge(array $badge, bool $mini = false): string {
+        $icon = html_writer::tag('i', '', [
+            'class' => 'fa ' . $badge['icon'] . (!empty($badge['spin']) ? ' fa-spin' : ''),
+            'aria-hidden' => 'true',
+        ]);
+        return html_writer::span(
+            $icon . $badge['label'],
+            'vc-badge vc-badge-' . $badge['tone'] . ($mini ? ' vc-badge-mini' : '')
+        );
     }
 }

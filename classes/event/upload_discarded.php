@@ -26,6 +26,7 @@
 namespace mod_videoconnect\event;
 
 use core\event\base;
+use moodle_url;
 
 /**
  * Triggered when an upload attempt is discarded from the control panel.
@@ -68,9 +69,9 @@ class upload_discarded extends base {
     /**
      * Returns relevant URL.
      *
-     * @return \moodle_url
+     * @return moodle_url
      */
     public function get_url() {
-        return new \moodle_url('/mod/videoconnect/panel.php', ['instanceid' => $this->other['instanceid'] ?? 0]);
+        return new moodle_url('/mod/videoconnect/panel.php', ['instanceid' => $this->other['instanceid'] ?? 0]);
     }
 }

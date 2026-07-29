@@ -28,12 +28,14 @@ namespace mod_videoconnect\task;
 use coding_exception;
 use core\task\scheduled_task;
 use dml_exception;
+use mod_videoconnect\error;
+use mod_videoconnect\provider\provider_manager;
 use mod_videoconnect\uploads;
 use mod_videoconnect\videoconnect;
-use mod_videoconnect\vimeo;
 use moodle_exception;
 use moodle_url;
 use stdClass;
+use Throwable;
 
 /**
  * Class upload_videos_task
@@ -60,8 +62,26 @@ class upload_videos_task extends scheduled_task {
      * @throws dml_exception
      */
     public function execute(): void {
-        global $DB, $CFG;
+        global $DB;
         mtrace("***** STARTING PROCESS");
+
+        // Rescate de filas atascadas en "subiendo": si un run anterior murió
+        // (fatal, timeout, corte de red) la fila quedaba en ese estado para
+        // siempre, fuera del alcance de reintentar y descartar.
+        $stuck = $DB->get_records_select(
+            'videoconnect_uploads',
+            'status = :status AND timecreated < :cutoff',
+            ['status' => uploads::STATUS_UPLOADING, 'cutoff' => time() - (6 * HOURSECS)]
+        );
+        foreach ($stuck as $row) {
+            $dataobject = new stdClass();
+            $dataobject->id = $row->id;
+            $dataobject->status = uploads::STATUS_ERROR_UPLOADING;
+            $dataobject->error_message = uploads::ERROR_MESSAGE[uploads::STATUS_ERROR_UPLOADING];
+            $dataobject->http_error_message = get_string('error_upload_interrupted', 'mod_videoconnect');
+            $DB->update_record('videoconnect_uploads', $dataobject);
+            mtrace("* RESCUED: upload {$row->id} stuck in uploading state, marked as retryable error.");
+        }
 
         $uploads = $DB->get_records(
             'videoconnect_uploads',
@@ -73,20 +93,24 @@ class upload_videos_task extends scheduled_task {
         mtrace("Uploading videos: " . count($uploads));
 
         if (empty($uploads)) {
-            // Nothing to upload: skip the Vimeo client construction (it may
-            // request an access token) and finish quietly.
+            // Nothing to upload: skip the provider client initialisation
+            // (it may request an access token) and finish quietly.
             mtrace("***** FINAL");
             return;
         }
 
+        // Las subidas nuevas van siempre por el conector activo del sitio
+        // (el sello por instancia gobierna la reproducción, no la subida).
+        $provider = provider_manager::get_active();
         try {
-            $vimeo = new vimeo();
-        } catch (\Throwable $e) {
-            // Misconfiguration (missing credentials/scopes) or Vimeo auth
+            $provider->connect();
+        } catch (Throwable $e) {
+            // Misconfiguration (missing credentials/scopes) or provider auth
             // failure. Pending uploads stay as STATUS_NOT_EXECUTED and will
             // be retried once the configuration is fixed.
             $settingsurl = new moodle_url('/admin/settings.php', ['section' => 'modsettingvideoconnect']);
-            mtrace("***** ERROR: Vimeo client could not be initialised: " . $e->getMessage());
+            mtrace("***** ERROR: " . $provider->get_display_name()
+                . " client could not be initialised: " . $e->getMessage());
             mtrace("***** Review the plugin configuration: " . $settingsurl->out(false));
             mtrace("***** Pending uploads are kept and will be retried on the next run.");
             throw $e;
@@ -94,27 +118,33 @@ class upload_videos_task extends scheduled_task {
 
         foreach ($uploads as $upload) {
             mtrace("- Instance: " . $upload->instance);
+
+            // El course module puede haber desaparecido desde que se encoló:
+            // caso propio, separado del resto de errores (dml_exception
+            // extiende moodle_exception y antes cualquier fallo de BD se
+            // etiquetaba como "actividad eliminada").
             try {
                 [$course, $cm] = get_course_and_cm_from_instance($upload->instance, 'videoconnect');
+            } catch (moodle_exception $e) {
+                $dataobject = new stdClass();
+                $dataobject->id = $upload->id;
+                $dataobject->status = uploads::STATUS_DELETED;
+                $dataobject->error_message = uploads::ERROR_MESSAGE[uploads::STATUS_DELETED];
+                $DB->update_record('videoconnect_uploads', $dataobject);
+                mtrace("* SKIPPED: the course module no longer exists ("
+                    . $upload->instance . "): " . $e->getMessage());
+                mtrace("-");
+                continue;
+            }
 
+            try {
                 $filepath = $upload->filepath;
 
-                // Privacidad del vídeo (decisiones TIPVIDEOC-9):
-                // - view 'disable': nunca visible navegando vimeo.com, solo
-                //   embebido (automatiza el "Hide from Vimeo" del README).
-                // - embed: whitelist de dominios o público, según el setting
-                //   (solo afecta a subidas nuevas).
-                // - sin descargas y sin comentarios.
+                // La política de privacidad (oculto del catálogo del
+                // proveedor, sin descargas ni comentarios, embebido por
+                // whitelist o público según el setting) la aplica el
+                // conector; el orquestador solo decide la restricción.
                 $usewhitelist = videoconnect::is_whitelist_enabled();
-                $params = [
-                    'name' => $cm->name,
-                    'privacy' => [
-                            'view' => 'disable',
-                            'embed' => $usewhitelist ? 'whitelist' : 'public',
-                            'comments' => 'nobody',
-                            'download' => false,
-                    ],
-                ];
 
                 $dataobject = new stdClass();
                 $dataobject->id = $upload->id;
@@ -122,11 +152,11 @@ class upload_videos_task extends scheduled_task {
                 $DB->update_record('videoconnect_uploads', $dataobject);
                 mtrace("* Uploading: " . $cm->name . " - Instance: " . $upload->instance);
 
-                $response = $vimeo->upload($filepath, $params);
+                $response = $provider->upload($filepath, $cm->name, $usewhitelist);
                 mtrace("* Response: " . json_encode($response));
 
                 if ($response->success) {
-                    $idvideo = $this->get_idvideo_from_url($response->data);
+                    $idvideo = $provider->extract_videoid($response->data);
                     if ($idvideo > 0) {
                         $datamodule = new stdClass();
                         $datamodule->id = $upload->instance;
@@ -140,11 +170,12 @@ class upload_videos_task extends scheduled_task {
                             $domains = videoconnect::get_whitelist_domains();
                             if (empty($domains)) {
                                 $whitelistok = false;
-                                $whitelisterror = new \mod_videoconnect\error(4003, 'Whitelist enabled but no domains configured');
+                                $whitelisterror = new error(4003,
+                                    get_string('error_whitelist_nodomains', 'mod_videoconnect'));
                                 mtrace("* Whitelist enabled but no domains configured");
                             }
                             foreach ($domains as $domain) {
-                                $responsewl = $vimeo->add_domain_whitelist($idvideo, $domain);
+                                $responsewl = $provider->add_domain_whitelist($idvideo, $domain);
                                 mtrace("* Response Whitelist ({$domain}): " . json_encode($responsewl));
                                 if (!$responsewl->success) {
                                     $whitelistok = false;
@@ -165,7 +196,7 @@ class upload_videos_task extends scheduled_task {
                             // Move to folder.
                             $folderid = get_config('mod_videoconnect', 'folderid');
                             if (!empty($folderid)) {
-                                $responsefol = $vimeo->add_video_to_folder($idvideo, $folderid);
+                                $responsefol = $provider->add_video_to_folder($idvideo, $folderid);
                                 mtrace("* Response Folder: " . json_encode($responsefol));
                                 if ($responsefol->success) {
                                     mtrace("* Moved to folder: " . $folderid . " | Id video: " . $idvideo);
@@ -192,6 +223,10 @@ class upload_videos_task extends scheduled_task {
                             $DB->update_record('videoconnect_uploads', $dataobject);
                             mtrace("* Error updating whitelist | Id video: " . $idvideo);
                         }
+                        // El vídeo ya está publicado (los estados de
+                        // incidencia no son reintentables): el fichero
+                        // temporal deja de ser necesario.
+                        uploads::delete_temp_file($upload);
                         mtrace("* Upload OK: " . $cm->name);
                     } else {
                         $dataobject = new stdClass();
@@ -211,34 +246,21 @@ class upload_videos_task extends scheduled_task {
                     $DB->update_record('videoconnect_uploads', $dataobject);
                     mtrace("* Upload ERROR: " . $cm->name);
                 }
-                rebuild_course_cache($course->id);
-            } catch (moodle_exception $e) {
+            } catch (Throwable $e) {
+                // Cualquier fallo no controlado (red, BD, API): la fila queda
+                // en error reintentable — nunca huérfana en "subiendo" — y la
+                // causa se registra en el log de la tarea y en la propia fila.
                 $dataobject = new stdClass();
                 $dataobject->id = $upload->id;
-                $dataobject->status = uploads::STATUS_DELETED;
-                $dataobject->error_message = uploads::ERROR_MESSAGE[uploads::STATUS_DELETED];
+                $dataobject->status = uploads::STATUS_ERROR_UPLOADING;
+                $dataobject->error_message = uploads::ERROR_MESSAGE[uploads::STATUS_ERROR_UPLOADING];
+                $dataobject->http_error_message = substr($e->getMessage(), 0, 900);
                 $DB->update_record('videoconnect_uploads', $dataobject);
-                mtrace("* UPLOAD NOT EXECUTE: El module not exists anymore (" . $upload->instance . ")");
+                mtrace("* UPLOAD ERROR (unexpected): " . $e->getMessage());
             }
 
             mtrace("-");
         }
         mtrace("***** FINAL");
-    }
-
-    /**
-     * Get Id Video from URL.
-     *
-     * @param string $url
-     * @return int
-     */
-    protected function get_idvideo_from_url(string $url): int {
-        $last = strrpos($url, "/");
-        if ($last) {
-            $idvideo = intval(substr($url, $last + 1));
-        } else {
-            $idvideo = intval($url);
-        }
-        return $idvideo;
     }
 }

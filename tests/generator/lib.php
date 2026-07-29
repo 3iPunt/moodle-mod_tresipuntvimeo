@@ -15,44 +15,24 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Response
+ * mod_videoconnect data generator.
  *
  * @package    mod_videoconnect
  * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
  * @author     3IPUNT <contacte@tresipunt.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-namespace mod_videoconnect;
 
 /**
- * Response
+ * mod_videoconnect data generator class.
+ *
+ * The default testing_module_generator flow is enough: it calls
+ * videoconnect_add_instance() with the given record (name, intro, idvideo…).
  *
  * @package    mod_videoconnect
  * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
  * @author     3IPUNT <contacte@tresipunt.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class response {
-    /** @var bool Success */
-    public bool $success;
-
-    /** @var string Data response */
-    public string $data;
-
-    /** @var error Error object */
-    public error $error;
-
-    /**
-     * Response constructor.
-     *
-     * @param bool $success
-     * @param string $data
-     * @param error $error
-     */
-    public function __construct(bool $success, string $data, error $error) {
-        $this->success = $success;
-        $this->data = $data;
-        $this->error = $error;
-    }
+class mod_videoconnect_generator extends testing_module_generator {
 }

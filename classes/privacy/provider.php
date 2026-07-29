@@ -15,26 +15,27 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Privacy Subsystem implementation for mod_tesipuntvimeo.
+ * Privacy Subsystem implementation for mod_videoconnect.
  *
  * @package     mod_videoconnect
- * @copyright   2022 Tresipunt - Antonio Manzano <contacte@tresipunt.com>
+ * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
+ * @author      3IPUNT <contacte@tresipunt.com>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace mod_videoconnect\privacy;
 
-use context;
-use core_privacy\local\metadata\collection;
-use core_privacy\local\request\approved_contextlist;
-use core_privacy\local\request\approved_userlist;
-use core_privacy\local\request\contextlist;
-use core_privacy\local\request\userlist;
+use core_privacy\local\metadata\null_provider;
 
 /**
  * Privacy Subsystem for mod_videoconnect implementing null_provider.
+ *
+ * @package     mod_videoconnect
+ * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
+ * @author      3IPUNT <contacte@tresipunt.com>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements \core_privacy\local\metadata\null_provider {
+class provider implements null_provider {
     /**
      * Get the language string identifier with the component's language
      * file to explain why this plugin stores no data.

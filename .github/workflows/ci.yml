@@ -31,7 +31,9 @@ jobs:
       fail-fast: false
       matrix:
         php: ['8.3', '8.4']
-        moodle-branch: ['main', 'MOODLE_404_STABLE']
+        # La matriz cubre el mínimo soportado declarado en version.php
+        # (Moodle 4.5) y la rama de desarrollo.
+        moodle-branch: ['main', 'MOODLE_405_STABLE']
         database: [pgsql, mariadb]
 
     steps:
