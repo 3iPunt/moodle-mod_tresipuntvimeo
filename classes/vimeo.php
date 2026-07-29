@@ -191,15 +191,27 @@ class vimeo {
             $headers[] = 'Authorization: Bearer ' . $this->accesstoken;
             $curl->setHeader($headers);
             $result = $curl->put($url, json_encode($params, JSON_THROW_ON_ERROR), $this->get_options_curl());
-            $result = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
-            if ($result['error']) {
-                return new response(
-                        false,
-                        '',
-                        new error(4002, $result['error'])
-                );
+
+            // Vimeo responde 204 No Content (cuerpo vacío) en estos PUT: el
+            // éxito se decide por el código HTTP, no intentando decodificar
+            // un body que puede no existir.
+            $info = $curl->get_info();
+            $httpcode = (int) ($info['http_code'] ?? 0);
+            if ($httpcode >= 200 && $httpcode < 300) {
+                return new response(true, '', new error(0, ''));
             }
-            return new response(true, '', new error(0, ''));
+
+            // Mensaje lo más claro posible: developer_message de Vimeo si
+            // existe, si no su error, y como último recurso código + body.
+            $decoded = json_decode((string) $result, true);
+            $message = $decoded['developer_message']
+                ?? $decoded['error']
+                ?? ('HTTP ' . $httpcode . ': ' . substr((string) $result, 0, 200));
+            return new response(
+                    false,
+                    '',
+                    new error(4002, $message)
+            );
         } catch (Exception $e) {
             return new response(
                     false,

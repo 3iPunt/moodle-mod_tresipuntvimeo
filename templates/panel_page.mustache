@@ -1,0 +1,170 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_videoconnect/panel_page
+
+    Video Connect control panel: state counters (quick filters), filter
+    toolbar and videos table.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * data-region="mod_videoconnect-panel"
+
+    Context variables required for this template:
+    * counters: array - One entry per derived state. Cards act as quick filters.
+        * state: string - State key.
+        * label: string - Human label of the state.
+        * count: int - Number of activities in that state.
+        * cardclass: string - CSS class for the card border.
+        * badgeclass: string - CSS class for the state badge.
+        * active: boolean - Whether this state filter is active.
+        * url: string - URL toggling this state filter.
+    * action: string - Form action URL (panel base URL).
+    * currentstate: string - Active state filter key ('' = none).
+    * states: array - State options for the filter select (value, label, selected).
+    * courseid: int - Active course filter, null when none.
+    * coursename: string - Name of the active course filter.
+    * search: string - Active search text.
+    * hasfilters: boolean - Whether any filter is active.
+    * reseturl: string - URL clearing state and search (keeps the course scope).
+    * table: string - Rendered table HTML.
+    * warning: string - Optional warning message (e.g. stale cron).
+
+    Example context (json):
+    {
+        "counters": [
+            {"state": "published", "label": "Published", "count": 12, "cardclass": "border-success",
+             "badgeclass": "badge text-bg-success", "active": false, "url": "#"}
+        ],
+        "action": "#",
+        "states": [{"value": "error", "label": "Upload error", "selected": false}],
+        "courseid": null,
+        "coursename": "",
+        "search": "",
+        "hasfilters": false,
+        "table": "<table></table>",
+        "warning": ""
+    }
+}}
+<div data-region="mod_videoconnect-panel">
+    {{#warning}}
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
+        {{#pix}} i/warning, core {{/pix}} <span>{{warning}}</span>
+    </div>
+    {{/warning}}
+    <div class="d-flex flex-wrap align-items-end gap-3 mb-4">
+        <div class="d-flex flex-wrap justify-content-center gap-3 flex-grow-1">
+            {{#counters}}
+            <a href="{{url}}" title="{{label}}"
+               class="card card-counter text-decoration-none text-reset {{cardclass}} {{#active}}active shadow{{/active}}">
+                <div class="card-body text-center py-2 px-4">
+                    <div class="fs-2 fw-bold lh-1 mb-1">{{count}}</div>
+                    <span class="{{badgeclass}}">{{label}}</span>
+                </div>
+            </a>
+            {{/counters}}
+        </div>
+        <form method="get" action="{{action}}" class="vc-course-scope ms-auto">
+            {{#currentstate}}<input type="hidden" name="state" value="{{currentstate}}">{{/currentstate}}
+            {{#search}}<input type="hidden" name="search" value="{{search}}">{{/search}}
+            {{#datefrom}}<input type="hidden" name="datefrom" value="{{datefrom}}">{{/datefrom}}
+            {{#dateto}}<input type="hidden" name="dateto" value="{{dateto}}">{{/dateto}}
+            <label for="vc-filter-course" class="form-label small fw-semibold mb-1">
+                {{# str }} course {{/ str }}
+            </label>
+            <select id="vc-filter-course" name="courseid">
+                <option value="">{{# str }} filter_allcourses, mod_videoconnect {{/ str }}</option>
+                {{#courseid}}
+                <option value="{{courseid}}" selected>{{coursename}}</option>
+                {{/courseid}}
+            </select>
+        </form>
+    </div>
+    <div class="card mb-4">
+        <div class="card-body py-3">
+            <form method="get" action="{{action}}">
+                {{#courseid}}<input type="hidden" name="courseid" value="{{courseid}}">{{/courseid}}
+                <div class="d-flex flex-wrap justify-content-center align-items-end gap-3">
+                    <div class="vc-filter-state">
+                        <label for="vc-filter-state" class="form-label small fw-semibold mb-1">
+                            {{# str }} videostate, mod_videoconnect {{/ str }}
+                        </label>
+                        <select id="vc-filter-state" name="state" class="form-select">
+                            <option value="">{{# str }} filter_allstates, mod_videoconnect {{/ str }}</option>
+                            {{#states}}
+                            <option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
+                            {{/states}}
+                        </select>
+                    </div>
+                    <div class="vc-filter-search">
+                        <label for="vc-filter-search" class="form-label small fw-semibold mb-1">
+                            {{# str }} search {{/ str }}
+                        </label>
+                        <input type="text" id="vc-filter-search" name="search" value="{{search}}"
+                               class="form-control" placeholder="{{# str }} search {{/ str }}">
+                    </div>
+                    <div class="vc-filter-date">
+                        <label for="vc-filter-datefrom" class="form-label small fw-semibold mb-1">
+                            {{# str }} fromdate, mod_videoconnect {{/ str }}
+                        </label>
+                        <input type="date" id="vc-filter-datefrom" name="datefrom" value="{{datefrom}}"
+                               class="form-control">
+                    </div>
+                    <div class="vc-filter-date">
+                        <label for="vc-filter-dateto" class="form-label small fw-semibold mb-1">
+                            {{# str }} todate, mod_videoconnect {{/ str }}
+                        </label>
+                        <input type="date" id="vc-filter-dateto" name="dateto" value="{{dateto}}"
+                               class="form-control">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            {{# str }} filter {{/ str }}
+                        </button>
+                        <a href="{{reseturl}}" class="btn btn-outline-secondary">
+                            {{# str }} reset {{/ str }}
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            {{{table}}}
+        </div>
+    </div>
+</div>
+{{#js}}
+require(['core/form-autocomplete'], function(autocomplete) {
+    autocomplete.enhance(
+        '#vc-filter-course',
+        false,
+        'core/form-course-selector',
+        {{#quote}}{{# str }} filter_allcourses, mod_videoconnect {{/ str }}{{/quote}}
+    ).then(function() {
+        var select = document.getElementById('vc-filter-course');
+        // El ámbito de curso se aplica al elegirlo (o al quitarlo), sin
+        // botón: conserva estado y búsqueda vía campos ocultos.
+        select.addEventListener('change', function() {
+            select.form.submit();
+        });
+        return null;
+    }).catch(function() {
+        return null;
+    });
+});
+{{/js}}

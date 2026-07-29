@@ -32,6 +32,8 @@
  * @return bool
  */
 function xmldb_videoconnect_upgrade($oldversion): bool {
+    global $DB;
+
     // Automatically generated Moodle v4.1.0 release upgrade line.
     // Put any upgrade step following this.
 
@@ -43,6 +45,20 @@ function xmldb_videoconnect_upgrade($oldversion): bool {
 
     // Automatically generated Moodle v4.4.0 release upgrade line.
     // Put any upgrade step following this.
+
+    if ($oldversion < 2026060401) {
+        // Drop videoconnect_uploads.http_status_code: it was never written
+        // by any code path (the Vimeo client library does not expose the
+        // HTTP status code of the upload response).
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('videoconnect_uploads');
+        $field = new xmldb_field('http_status_code');
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026060401, 'videoconnect');
+    }
 
     // Everything has succeeded to here. Return true.
     return true;
