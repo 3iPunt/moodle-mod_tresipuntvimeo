@@ -28,6 +28,7 @@ namespace mod_videoconnect\output;
 use coding_exception;
 use mod_videoconnect\provider\provider_interface;
 use mod_videoconnect\uploads;
+use moodle_exception;
 use moodle_url;
 use renderable;
 use renderer_base;
@@ -109,7 +110,7 @@ class panel_page implements renderable, templatable {
      *
      * @param renderer_base $output
      * @return stdClass
-     * @throws coding_exception
+     * @throws coding_exception|moodle_exception
      */
     public function export_for_template(renderer_base $output): stdClass {
         $currentstate = (string) $this->filters['state'];
@@ -121,16 +122,15 @@ class panel_page implements renderable, templatable {
         ]);
 
         $data = new stdClass();
-        $data->logotresipunt = $output->image_url('tresipunt_logo', 'mod_videoconnect')->out(false);
-        $logopix = $this->provider ? $this->provider->get_logo_pix() : 'icon';
-        $data->logoprovider = $output->image_url($logopix, 'mod_videoconnect')->out(false);
-        $data->providername = $this->provider ? $this->provider->get_display_name() : '';
+        foreach (page_header::export_branding($output, $this->provider) as $field => $value) {
+            $data->{$field} = $value;
+        }
         $data->headertitle = get_string('panel', 'mod_videoconnect');
         $data->headerdesc = get_string('panel_desc', 'mod_videoconnect');
         $data->updated = userdate(time(), get_string('strftimedatetimeshort', 'langconfig'));
         $data->refreshurl = (new moodle_url('/mod/videoconnect/panel.php',
             $baseparams + ($currentstate !== '' ? ['state' => $currentstate] : [])))->out(false);
-        $data->settingsurl = $this->settingsurl ? $this->settingsurl->out(false) : null;
+        $data->settingsurl = $this->settingsurl?->out(false);
 
         $data->warning = $this->warning;
 

@@ -165,9 +165,6 @@ class vimeo_provider implements provider_interface {
     /**
      * Initialises the Vimeo API client.
      *
-     * @throws moodle_exception When credentials/scopes are missing or the
-     *         client credentials grant fails.
-     * @throws dml_exception
      */
     public function connect(): void {
         if ($this->client === null) {
@@ -184,6 +181,7 @@ class vimeo_provider implements provider_interface {
      * @param string $name Video title.
      * @param bool $restrictembed Whether embedding is whitelist-restricted.
      * @return response
+     * @throws coding_exception
      */
     public function upload(string $filepath, string $name, bool $restrictembed): response {
         return $this->client()->upload($filepath, [
@@ -214,6 +212,7 @@ class vimeo_provider implements provider_interface {
      * @param int $videoid
      * @param string $domain Domain without protocol.
      * @return response
+     * @throws coding_exception
      */
     public function add_domain_whitelist(int $videoid, string $domain): response {
         return $this->client()->add_domain_whitelist($videoid, $domain);
@@ -225,6 +224,7 @@ class vimeo_provider implements provider_interface {
      * @param int $videoid
      * @param string $folderid
      * @return response
+     * @throws coding_exception
      */
     public function add_video_to_folder(int $videoid, string $folderid): response {
         return $this->client()->add_video_to_folder($videoid, (int) $folderid);
@@ -237,6 +237,7 @@ class vimeo_provider implements provider_interface {
      * scopes with the ones the full flow needs, reporting the missing ones.
      *
      * @return array success (bool), level ('success'|'warning'|'error') and message.
+     * @throws coding_exception
      */
     public function check_connection(): array {
         try {

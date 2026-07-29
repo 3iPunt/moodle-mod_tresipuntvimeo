@@ -25,6 +25,9 @@
 
 namespace mod_videoconnect\form;
 
+use coding_exception;
+use core\exception\moodle_exception;
+use dml_exception;
 use html_writer;
 use mod_videoconnect\provider\vimeo_provider;
 use mod_videoconnect\videoconnect;
@@ -32,6 +35,8 @@ use moodle_url;
 use moodleform;
 
 defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
 
 require_once($CFG->libdir . '/formslib.php');
 
@@ -52,8 +57,10 @@ class settings_form extends moodleform {
 
     /**
      * Defines forms elements.
+     * @throws coding_exception
+     * @throws moodle_exception
      */
-    public function definition() {
+    public function definition(): void {
         $mform = $this->_form;
 
         $mform->addElement('header', 'vimeoheading', get_string('vimeoheading', 'mod_videoconnect'));
@@ -119,7 +126,7 @@ class settings_form extends moodleform {
      * @param array $data
      * @param array $files
      * @return array
-     * @throws \coding_exception
+     * @throws coding_exception|dml_exception
      */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);

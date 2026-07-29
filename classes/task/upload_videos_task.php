@@ -59,7 +59,11 @@ class upload_videos_task extends scheduled_task {
     /**
      * Execute the task.
      *
+     * @return void
+     * @throws Throwable
+     * @throws coding_exception
      * @throws dml_exception
+     * @throws moodle_exception
      */
     public function execute(): void {
         global $DB;

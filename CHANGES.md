@@ -35,7 +35,7 @@ saneamiento integral tras auditoría.
   estándar «Muestra la descripción» (`FEATURE_SHOW_DESCRIPTION`).
 - **«Probar conexión»** en los ajustes: valida credenciales contra el
   proveedor y avisa de los scopes que faltan para el flujo completo.
-- **Suite PHPUnit** (36 tests) y CI alineada con el mínimo soportado.
+- **Suite PHPUnit** (36 tests: conector, helper y modelo de subidas).
 - **README nuevo** (inglés + español) con la lista real de scopes
   (`public, private, upload, edit, interact`) y toda la funcionalidad
   actual; catalán completado (145 claves en los 3 idiomas).

@@ -28,6 +28,7 @@ namespace mod_videoconnect\output;
 use coding_exception;
 use mod_videoconnect\provider\provider_interface;
 use mod_videoconnect\uploads;
+use moodle_exception;
 use moodle_url;
 use renderable;
 use renderer_base;
@@ -144,7 +145,7 @@ class view_page implements renderable, templatable {
      * Builds the state card (C3) shown instead of the player.
      *
      * @return stdClass
-     * @throws coding_exception
+     * @throws coding_exception|moodle_exception
      */
     protected function export_card(): stdClass {
         $variant = $this->resolve_variant();

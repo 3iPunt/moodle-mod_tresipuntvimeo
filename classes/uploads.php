@@ -201,7 +201,7 @@ class uploads {
      *
      * @param string $state One of self::STATES.
      * @return string
-     * @throws \coding_exception
+     * @throws coding_exception
      */
     public static function get_state_label(string $state): string {
         return get_string('state_' . $state, 'mod_videoconnect');
@@ -215,7 +215,7 @@ class uploads {
      *
      * @param int $status One of the STATUS_* constants.
      * @return string
-     * @throws \coding_exception
+     * @throws coding_exception
      */
     public static function get_status_label(int $status): string {
         if ($status < 0 || $status >= count(self::ERROR_MESSAGE)) {
@@ -312,7 +312,7 @@ class uploads {
      * would race with the cron task.
      *
      * @param int $uploadid {videoconnect_uploads} id.
-     * @throws \moodle_exception When the attempt is not discardable.
+     * @throws moodle_exception When the attempt is not discardable.
      * @throws dml_exception
      */
     public static function discard(int $uploadid): void {

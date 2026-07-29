@@ -28,6 +28,7 @@ namespace mod_videoconnect\output;
 use coding_exception;
 use mod_videoconnect\provider\provider_interface;
 use mod_videoconnect\uploads;
+use moodle_exception;
 use moodle_url;
 use renderable;
 use renderer_base;
@@ -87,14 +88,13 @@ class detail_page implements renderable, templatable {
      *
      * @param renderer_base $output
      * @return stdClass
-     * @throws coding_exception
+     * @throws coding_exception|moodle_exception
      */
     public function export_for_template(renderer_base $output): stdClass {
         $data = new stdClass();
-        $data->logotresipunt = $output->image_url('tresipunt_logo', 'mod_videoconnect')->out(false);
-        $logopix = $this->provider ? $this->provider->get_logo_pix() : 'icon';
-        $data->logoprovider = $output->image_url($logopix, 'mod_videoconnect')->out(false);
-        $data->providername = $this->provider ? $this->provider->get_display_name() : '';
+        foreach (page_header::export_branding($output, $this->provider) as $field => $value) {
+            $data->{$field} = $value;
+        }
         $data->backurl = $this->backurl->out(false);
 
         // Sin escape: el template ya escapa con {{...}} (evita el doble
@@ -172,7 +172,7 @@ class detail_page implements renderable, templatable {
             return null;
         }
         $status = $this->lastlive ? (int) $this->lastlive->status : null;
-        $fileavailable = $this->lastlive ? !empty($this->lastlive->fileavailable) : false;
+        $fileavailable = $this->lastlive && !empty($this->lastlive->fileavailable);
 
         if ($state === uploads::STATE_INCIDENT) {
             $variant = ($status === uploads::STATUS_UPLOADING_ERROR_FOLDER) ? 'folder' : 'whitelist';

@@ -41,9 +41,8 @@ class backup_videoconnect_activity_structure_step extends backup_activity_struct
      *
      * @return backup_nested_element
      * @throws base_element_struct_exception
-     * @throws base_step_exception
      */
-    protected function define_structure() {
+    protected function define_structure(): backup_nested_element {
 
         // Define each element separated.
         $videoconnect = new backup_nested_element('videoconnect', ['id'], [

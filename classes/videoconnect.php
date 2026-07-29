@@ -26,6 +26,7 @@
 namespace mod_videoconnect;
 
 use core_text;
+use dml_exception;
 use mod_videoconnect\provider\provider_manager;
 use stdClass;
 
@@ -47,7 +48,7 @@ class videoconnect {
      *
      * @param int $courseid
      * @return stdClass[] Instance records keyed by id.
-     * @throws \dml_exception
+     * @throws dml_exception
      */
     public static function get_course_instances(int $courseid): array {
         global $DB;
@@ -65,18 +66,18 @@ class videoconnect {
      * behaviour (whitelist always on) until an admin saves the settings.
      *
      * @return bool
-     * @throws \dml_exception
+     * @throws dml_exception
      */
     public static function is_whitelist_enabled(): bool {
         $value = get_config('mod_videoconnect', 'usewhitelist');
-        return $value === false ? true : (bool) $value;
+        return $value === false || $value;
     }
 
     /**
      * Clean list of configured whitelist domains.
      *
      * @return string[]
-     * @throws \dml_exception
+     * @throws dml_exception
      */
     public static function get_whitelist_domains(): array {
         return self::parse_domains((string) get_config('mod_videoconnect', 'whitelist'));
@@ -117,7 +118,7 @@ class videoconnect {
      *
      * @param string $value Raw user input.
      * @return string|null Numeric ID, '' when empty, or null when invalid.
-     * @throws \dml_exception
+     * @throws dml_exception
      */
     public static function extract_folderid(string $value): ?string {
         return provider_manager::get_active()->parse_folder_reference($value);

@@ -25,7 +25,9 @@
 
 namespace mod_videoconnect\event;
 
+use coding_exception;
 use core\event\base;
+use core\exception\moodle_exception;
 use moodle_url;
 
 /**
@@ -40,7 +42,7 @@ class upload_retried extends base {
     /**
      * Init method.
      */
-    protected function init() {
+    protected function init(): void {
         $this->data['crud'] = 'u';
         $this->data['edulevel'] = self::LEVEL_OTHER;
         $this->data['objecttable'] = 'videoconnect_uploads';
@@ -50,9 +52,10 @@ class upload_retried extends base {
      * Returns localised general event name.
      *
      * @return string
-     * @throws \coding_exception
+     * @throws coding_exception
      */
-    public static function get_name() {
+    public static function get_name(): string
+    {
         return get_string('eventuploadretried', 'mod_videoconnect');
     }
 
@@ -61,7 +64,7 @@ class upload_retried extends base {
      *
      * @return string
      */
-    public function get_description() {
+    public function get_description(): string {
         return "The user with id '$this->userid' requeued the upload attempt with id '$this->objectid' " .
             "of the videoconnect activity with course module id '$this->contextinstanceid' from the control panel.";
     }
@@ -70,8 +73,9 @@ class upload_retried extends base {
      * Returns relevant URL.
      *
      * @return moodle_url
+     * @throws moodle_exception
      */
-    public function get_url() {
+    public function get_url(): moodle_url {
         return new moodle_url('/mod/videoconnect/panel.php', ['instanceid' => $this->other['instanceid'] ?? 0]);
     }
 }

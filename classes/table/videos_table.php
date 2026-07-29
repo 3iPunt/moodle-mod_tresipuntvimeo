@@ -25,6 +25,9 @@
 
 namespace mod_videoconnect\table;
 
+use coding_exception;
+use core\exception\moodle_exception;
+use dml_exception;
 use html_writer;
 use mod_videoconnect\output\badges;
 use mod_videoconnect\provider\provider_interface;
@@ -63,7 +66,7 @@ class videos_table extends table_sql {
      * @param string $search Activity name search ('' = none).
      * @param int $datefrom Minimum modification timestamp (0 = none).
      * @param int $dateto Maximum modification timestamp (0 = none).
-     * @throws \coding_exception
+     * @throws coding_exception|dml_exception
      */
     public function __construct(string $uniqueid, moodle_url $baseurl, string $state = '', int $courseid = 0,
             string $search = '', int $datefrom = 0, int $dateto = 0) {
@@ -127,6 +130,7 @@ class videos_table extends table_sql {
      *
      * @param stdClass $row
      * @return string
+     * @throws moodle_exception
      */
     public function col_name(stdClass $row): string {
         $activityurl = new moodle_url('/mod/videoconnect/view.php', ['id' => $row->cmid]);
@@ -145,7 +149,7 @@ class videos_table extends table_sql {
      *
      * @param stdClass $row
      * @return string
-     * @throws \coding_exception
+     * @throws coding_exception
      */
     public function col_state(stdClass $row): string {
         $html = $this->badge(badges::state_badge($row->state));
@@ -209,7 +213,8 @@ class videos_table extends table_sql {
      *
      * @param stdClass $row
      * @return string
-     * @throws \coding_exception
+     * @throws coding_exception
+     * @throws moodle_exception
      */
     public function col_actions(stdClass $row): string {
         $url = new moodle_url('/mod/videoconnect/panel.php', ['instanceid' => $row->id]);

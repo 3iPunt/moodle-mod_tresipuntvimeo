@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Folder ID admin setting.
+ * Co-branded page header exporter.
  *
  * @package    mod_videoconnect
  * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
@@ -23,41 +23,37 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace mod_videoconnect\admin;
+namespace mod_videoconnect\output;
 
-use admin_setting_configtext;
-use coding_exception;
-use dml_exception;
-use mod_videoconnect\videoconnect;
-
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-require_once($CFG->libdir . '/adminlib.php');
+use mod_videoconnect\provider\provider_interface;
+use renderer_base;
 
 /**
- * Folder ID admin setting: accepts a numeric Vimeo folder ID or a pasted
- * folder URL and stores the normalised numeric ID.
+ * Branding context of the co-branded header (templates/page_header.mustache):
+ * Tresipunt logo + active provider logo and name. Shared by every panel view
+ * so the header renders identically everywhere.
  *
  * @package    mod_videoconnect
  * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
  * @author     3IPUNT <contacte@tresipunt.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class setting_folderid extends admin_setting_configtext {
+final class page_header {
     /**
-     * Normalises the value to the numeric folder ID and saves it.
+     * Branding fields consumed by the page_header template.
      *
-     * @param string $data Raw form value (ID or folder URL).
-     * @return string Empty string on success, error message otherwise.
-     * @throws dml_exception
-     * @throws coding_exception
+     * @param renderer_base $output
+     * @param provider_interface|null $provider Active/instance provider connector.
+     * @return array logotresipunt, logoprovider, providername.
      */
-    public function write_setting($data): string {
-        $folderid = videoconnect::extract_folderid((string) $data);
-        if ($folderid === null) {
-            return get_string('folderid_invalid', 'mod_videoconnect');
-        }
-        return parent::write_setting($folderid);
+    public static function export_branding(renderer_base $output, ?provider_interface $provider): array {
+        return [
+            'logotresipunt' => $output->image_url('tresipunt_logo', 'mod_videoconnect')->out(false),
+            'logoprovider' => $output->image_url(
+                $provider ? $provider->get_logo_pix() : 'icon',
+                'mod_videoconnect'
+            )->out(false),
+            'providername' => $provider ? $provider->get_display_name() : '',
+        ];
     }
 }

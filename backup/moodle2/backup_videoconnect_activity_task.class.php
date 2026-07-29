@@ -40,8 +40,9 @@ class backup_videoconnect_activity_task extends backup_activity_task {
 
     /**
      * Defines a backup step to store the instance data in the videoconnect.xml file
+     * @throws base_task_exception
      */
-    protected function define_my_steps() {
+    protected function define_my_steps(): void {
         $this->add_step(new backup_videoconnect_activity_structure_step(
             'videoconnect_structure',
             'videoconnect.xml'
@@ -55,7 +56,7 @@ class backup_videoconnect_activity_task extends backup_activity_task {
      * to the activity instance scripts
      * @return string the same content with no changes
      */
-    public static function encode_content_links($content) {
+    public static function encode_content_links($content): string {
         return $content;
     }
 }
