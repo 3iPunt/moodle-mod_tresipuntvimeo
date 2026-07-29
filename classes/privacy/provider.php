@@ -15,10 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Privacy Subsystem implementation for mod_tesipuntvimeo.
+ * Privacy Subsystem implementation for mod_videoconnect.
  *
  * @package     mod_videoconnect
- * @copyright   2022 Tresipunt - Antonio Manzano <contacte@tresipunt.com>
+ * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
+ * @author      3IPUNT <contacte@tresipunt.com>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -26,22 +27,89 @@ namespace mod_videoconnect\privacy;
 
 use context;
 use core_privacy\local\metadata\collection;
+use core_privacy\local\metadata\provider as metadata_provider;
 use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\contextlist;
+use core_privacy\local\request\core_userlist_provider;
+use core_privacy\local\request\plugin\provider as request_provider;
 use core_privacy\local\request\userlist;
 
 /**
- * Privacy Subsystem for mod_videoconnect implementing null_provider.
+ * Privacy Subsystem for mod_videoconnect.
+ *
+ * The plugin stores no personal data in its own tables (the upload queue
+ * keeps file paths and provider responses, never user ids), but it acts as
+ * a conduit: the video files picked by teachers — and the activity name,
+ * used as the video title — are published to the external video provider
+ * (Vimeo). That external location is declared here.
+ *
+ * @package     mod_videoconnect
+ * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
+ * @author      3IPUNT <contacte@tresipunt.com>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements \core_privacy\local\metadata\null_provider {
+class provider implements metadata_provider, core_userlist_provider, request_provider {
     /**
-     * Get the language string identifier with the component's language
-     * file to explain why this plugin stores no data.
+     * Returns metadata about this plugin: data sent to the video provider.
      *
-     * @return  string
+     * @param collection $collection The initialised collection to add items to.
+     * @return collection
      */
-    public static function get_reason(): string {
-        return 'privacy:metadata';
+    public static function get_metadata(collection $collection): collection {
+        return $collection->add_external_location_link('vimeo', [
+            'videofile' => 'privacy:metadata:vimeo:videofile',
+            'name' => 'privacy:metadata:vimeo:name',
+        ], 'privacy:metadata:vimeo');
+    }
+
+    /**
+     * Contexts with user information: none is stored by this plugin.
+     *
+     * @param int $userid The user to search.
+     * @return contextlist Empty contextlist.
+     */
+    public static function get_contexts_for_userid(int $userid): contextlist {
+        return new contextlist();
+    }
+
+    /**
+     * Users with data within a context: none is stored by this plugin.
+     *
+     * @param userlist $userlist The userlist to add users to.
+     */
+    public static function get_users_in_context(userlist $userlist): void {
+    }
+
+    /**
+     * Export user data: nothing to export, no user data is stored.
+     *
+     * @param approved_contextlist $contextlist Approved contexts to export.
+     */
+    public static function export_user_data(approved_contextlist $contextlist): void {
+    }
+
+    /**
+     * Delete all data in a context: nothing to delete, no user data is stored.
+     *
+     * @param context $context The context to delete for.
+     */
+    public static function delete_data_for_all_users_in_context(context $context): void {
+    }
+
+    /**
+     * Delete data for users: nothing to delete, no user data is stored.
+     *
+     * @param approved_userlist $userlist Approved users to delete for.
+     */
+    public static function delete_data_for_users(approved_userlist $userlist): void {
+    }
+
+    /**
+     * Delete data for a user: nothing to delete, no user data is stored.
+     *
+     * @param approved_contextlist $contextlist Approved contexts to delete for.
+     */
+    public static function delete_data_for_user(approved_contextlist $contextlist): void {
     }
 }

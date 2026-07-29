@@ -23,7 +23,10 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use mod_videoconnect\event\course_module_viewed;
 use mod_videoconnect\output\view_page;
+use mod_videoconnect\provider\provider_manager;
+use mod_videoconnect\uploads;
 
 require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/lib.php');
@@ -70,7 +73,7 @@ if ($cmfound) {
 
     require_capability('mod/videoconnect:view', $modulecontext);
 
-    $event = \mod_videoconnect\event\course_module_viewed::create([
+    $event = course_module_viewed::create([
         'objectid' => $moduleinstance->id,
             'context' => $modulecontext,
     ]);
@@ -86,17 +89,22 @@ if ($cmfound) {
     echo $OUTPUT->header();
     $output = $PAGE->get_renderer('mod_videoconnect');
     $lastupload = empty($moduleinstance->idvideo)
-        ? \mod_videoconnect\uploads::get_latest($moduleinstance->id)
+        ? uploads::get_latest($moduleinstance->id)
         : null;
-    $page = new view_page($moduleinstance, true, $lastupload);
+    // La causa técnica y el enlace al detalle del panel solo se muestran a
+    // quien puede gestionarlo; el alumno recibe el mensaje en llano.
+    $canmanage = has_capability('mod/videoconnect:managevideos', context_system::instance());
+    // Conector del proveedor con el que se creó la instancia (fallback al
+    // por defecto en filas anteriores al sello de proveedor).
+    $provider = provider_manager::get_provider($moduleinstance->provider ?? provider_manager::DEFAULT);
+    $page = new view_page($moduleinstance, true, $lastupload, $cm->id, true, $canmanage, $provider);
     echo $output->render($page);
+    echo $OUTPUT->footer();
 } else {
     require_login();
-    $context = context_system::instance();
-    $PAGE->set_context($context);
+    $PAGE->set_context(context_system::instance());
     $PAGE->set_url('/mod/videoconnect/view.php', ['id' => $id]);
-    echo $OUTPUT->header();
+    // Antes de emitir salida: una página de error a medio renderizar no
+    // ayuda a nadie (y el footer quedaba inalcanzable).
     throw new moodle_exception('missingidandcmid', 'mod_videoconnect');
 }
-
-echo $OUTPUT->footer();

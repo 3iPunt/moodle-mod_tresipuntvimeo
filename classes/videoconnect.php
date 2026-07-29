@@ -26,6 +26,9 @@
 namespace mod_videoconnect;
 
 use core_text;
+use dml_exception;
+use mod_videoconnect\provider\provider_manager;
+use stdClass;
 
 /**
  * Plugin helper: static utility methods.
@@ -37,24 +40,44 @@ use core_text;
  */
 class videoconnect {
     /**
+     * All videoconnect instances of a course, cached per request.
+     *
+     * The course page renders every instance inline (cm_info_view): without
+     * this cache each activity fired its own get_record on every course
+     * page load.
+     *
+     * @param int $courseid
+     * @return stdClass[] Instance records keyed by id.
+     * @throws dml_exception
+     */
+    public static function get_course_instances(int $courseid): array {
+        global $DB;
+        static $cache = [];
+        if (!isset($cache[$courseid])) {
+            $cache[$courseid] = $DB->get_records('videoconnect', ['course' => $courseid]);
+        }
+        return $cache[$courseid];
+    }
+
+    /**
      * Whether uploaded videos must be restricted to whitelisted domains.
      *
      * Installs older than the usewhitelist setting keep the historical
      * behaviour (whitelist always on) until an admin saves the settings.
      *
      * @return bool
-     * @throws \dml_exception
+     * @throws dml_exception
      */
     public static function is_whitelist_enabled(): bool {
         $value = get_config('mod_videoconnect', 'usewhitelist');
-        return $value === false ? true : (bool) $value;
+        return $value === false || $value;
     }
 
     /**
      * Clean list of configured whitelist domains.
      *
      * @return string[]
-     * @throws \dml_exception
+     * @throws dml_exception
      */
     public static function get_whitelist_domains(): array {
         return self::parse_domains((string) get_config('mod_videoconnect', 'whitelist'));
@@ -88,26 +111,16 @@ class videoconnect {
     }
 
     /**
-     * Extracts the numeric Vimeo folder ID from a raw value.
+     * Extracts the folder ID from a raw value (plain ID or pasted URL).
      *
-     * Accepts a plain numeric ID or a Vimeo folder URL, e.g.:
-     * - https://vimeo.com/manage/folders/<id>
-     * - https://vimeo.com/user/<userid>/folder/<id>?isPrivate=true
+     * Delegates to the active provider connector, which knows its own
+     * folder URL formats.
      *
      * @param string $value Raw user input.
      * @return string|null Numeric ID, '' when empty, or null when invalid.
+     * @throws dml_exception
      */
     public static function extract_folderid(string $value): ?string {
-        $value = trim($value);
-        if ($value === '') {
-            return '';
-        }
-        if (preg_match('~^\d+$~', $value)) {
-            return $value;
-        }
-        if (preg_match('~vimeo\.com/.*folders?/(\d+)~i', $value, $matches)) {
-            return $matches[1];
-        }
-        return null;
+        return provider_manager::get_active()->parse_folder_reference($value);
     }
 }

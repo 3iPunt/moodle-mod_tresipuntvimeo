@@ -13,65 +13,87 @@
 }}
 {{!
     @template mod_videoconnect/view_page
-    Main content for the Tresipunt Vimeo module view page.
+
+    Main content of the activity: the embedded player, or a state card
+    (pending / error / no video) sharing the same 16:9 container.
+
     Classes required for JS:
     * none
+
     Data attributes required for JS:
     * data-region="mod_videoconnect"
+
     Context variables required for this template:
-    * has_name: boolean - Whether the module has a name.
-    * name: string - The name of the module.
-    * has_vimeo: boolean - Whether the module has a Vimeo video.
-    * idvideo: string - The ID of the Vimeo video.
-    * width: string - The width of the Vimeo video iframe.
-    * height: string - The height of the Vimeo video iframe.
-    * frameborder: string - The frameborder attribute for the Vimeo video iframe.
-    * title: string - The title of the Vimeo video.
-    * status: string - The status message if there is no Vimeo video.
-    * http_error_message: string - The HTTP error message if there is no Vimeo video.
-    * intro: string - The introduction text for the module.
+    * has_name: boolean - Whether the module has a name heading.
+    * name: string - Formatted name of the module.
+    * title: string - Accessible title for the player iframe.
+    * has_vimeo: boolean - Whether there is a published video to embed.
+    * embedurl: string - Full URL of the provider embed player.
+    * has_intro: boolean - Whether the intro must be shown.
+    * intro: string - Formatted intro HTML.
+    * card: object - State card (only when has_vimeo is false):
+        * ispending, iserror, isnovideo: boolean - Variant flags.
+        * icon: string - FontAwesome icon class.
+        * spin: boolean - Whether the icon spins (uploading).
+        * title: string - Card headline.
+        * sub: string - Card secondary line.
+        * hascause: boolean - Whether a technical cause is shown (managers).
+        * cause: string - Short diagnostic cause.
+        * showdetail: boolean - Whether to link the panel detail (managers).
+        * detailurl: string - URL of the panel detail page.
+
     Example context (json):
     {
         "has_name": true,
-        "name": "Sample Vimeo Module",
-        "has_vimeo": true,
-        "idvideo": "123456789",
-        "width": "640",
-        "height": "360",
-        "frameborder": "0",
-        "title": "Sample Video",
-        "status": "Video not available",
-        "http_error_message": "There was an error loading the video.",
-        "intro": "<p>This is an introduction to the Vimeo module.</p>"
+        "name": "Session 2",
+        "title": "Session 2",
+        "has_vimeo": false,
+        "has_intro": true,
+        "intro": "<p>Watch the video.</p>",
+        "card": {
+            "ispending": true, "iserror": false, "isnovideo": false,
+            "icon": "fa-clock", "spin": false,
+            "title": "The video will be available shortly",
+            "sub": "It is being published; you do not need to do anything.",
+            "hascause": false, "cause": "",
+            "showdetail": false, "detailurl": ""
+        }
     }
 }}
-<div data-region="mod_videoconnect">
-    {{# has_name }}
-    <h2>{{ name }}</h2>
+<div data-region="mod_videoconnect" class="mod_videoconnect-view">
+    {{#has_name}}
+        <h2 class="vc-view-name">{{name}}</h2>
     {{/has_name}}
-    {{# has_vimeo }}
-    <div class="iframe_container">
-        <iframe src="https://player.vimeo.com/video/{{ idvideo }}?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
-                width="{{ width }}"
-                height="{{ height }}"
-                allow="autoplay; fullscreen; picture-in-picture"
-                allowfullscreen
-                title="{{ title }}">
-        </iframe>
-    </div>
-    {{/ has_vimeo }}
-    {{^ has_vimeo }}
-        <div class="response">
-            <div class="card-content">
-                <p class="title">{{# str }} we_are_sorry, mod_videoconnect {{/ str }}</p>
-                <p class="description">{{ status }}</p>
-                {{# has_name }}
-                    <p>{{ http_error_message }}</p>
-                {{/has_name}}
+    <div class="vc-embed embed-responsive embed-responsive-16by9 ratio ratio-16x9{{^has_vimeo}} vc-embed-card{{/has_vimeo}}">
+        {{#has_vimeo}}
+            <iframe class="embed-responsive-item"
+                    src="{{embedurl}}"
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    allowfullscreen
+                    title="{{title}}"></iframe>
+        {{/has_vimeo}}
+        {{^has_vimeo}}
+            {{#card}}
+            <div class="vc-statecard embed-responsive-item" role="status">
+                <span class="vc-statecard-icon {{#ispending}}vc-tone-teal{{/ispending}}{{#iserror}}vc-tone-danger{{/iserror}}{{#isnovideo}}vc-tone-neutral{{/isnovideo}}" aria-hidden="true">
+                    <i class="fa {{icon}} {{#spin}}fa-spin{{/spin}}"></i>
+                </span>
+                <span class="vc-statecard-title">{{title}}</span>
+                <span class="vc-statecard-sub">{{sub}}</span>
+                {{#hascause}}
+                    <span class="vc-statecard-cause"><strong>{{#str}} cause, mod_videoconnect {{/str}}:</strong> {{cause}}</span>
+                {{/hascause}}
+                {{#showdetail}}
+                    <a class="vc-statecard-link" href="{{detailurl}}">
+                        {{#str}} viewdetailpanel, mod_videoconnect {{/str}}
+                        <i class="fa fa-chevron-right" aria-hidden="true"></i>
+                    </a>
+                {{/showdetail}}
             </div>
-        </div>
-    {{/ has_vimeo }}
-    <div class="intro">{{{ intro }}}</div>
+            {{/card}}
+        {{/has_vimeo}}
+    </div>
+    {{#has_intro}}
+        <div class="vc-view-intro">{{{intro}}}</div>
+    {{/has_intro}}
 </div>
-
-

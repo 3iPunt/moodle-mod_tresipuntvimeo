@@ -25,14 +25,16 @@
 
 namespace mod_videoconnect\event;
 
+use core\event\course_module_instance_list_viewed as core_instance_list_viewed;
+
 /**
- * The mod_tresipuntaudio instance list viewed event class.
+ * The mod_videoconnect instance list viewed event class.
  *
  * @package     mod_videoconnect
  * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
  * @author     3IPUNT <contacte@tresipunt.com>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class course_module_instance_list_viewed extends \core\event\course_module_instance_list_viewed {
+class course_module_instance_list_viewed extends core_instance_list_viewed {
     // No need for any code here as everything is handled by the parent class.
 }

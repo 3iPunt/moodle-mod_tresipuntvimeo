@@ -25,10 +25,18 @@
 
 namespace mod_videoconnect\form;
 
+use coding_exception;
+use core\exception\moodle_exception;
+use dml_exception;
+use html_writer;
+use mod_videoconnect\provider\vimeo_provider;
 use mod_videoconnect\videoconnect;
+use moodle_url;
 use moodleform;
 
 defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
 
 require_once($CFG->libdir . '/formslib.php');
 
@@ -44,24 +52,15 @@ require_once($CFG->libdir . '/formslib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class settings_form extends moodleform {
-    /** @var string[] Available Vimeo scopes (same list as settings.php). */
-    public const SCOPES = [
-        'public',
-        'private',
-        'purchased',
-        'create',
-        'edit',
-        'delete',
-        'interact',
-        'upload',
-        'promo_codes',
-        'video_files',
-    ];
+    /** @var string[] Available Vimeo scopes (single source: the connector). */
+    public const SCOPES = vimeo_provider::SCOPES;
 
     /**
      * Defines forms elements.
+     * @throws coding_exception
+     * @throws moodle_exception
      */
-    public function definition() {
+    public function definition(): void {
         $mform = $this->_form;
 
         $mform->addElement('header', 'vimeoheading', get_string('vimeoheading', 'mod_videoconnect'));
@@ -83,6 +82,14 @@ class settings_form extends moodleform {
         $mform->addElement('passwordunmask', 'access_token', get_string('access_token', 'mod_videoconnect'), ['size' => 70]);
         $mform->setType('access_token', PARAM_RAW_TRIMMED);
         $mform->disabledIf('access_token', 'is_authenticated', 'notchecked');
+
+        // Test de conectividad, junto a las credenciales que valida. Ojo:
+        // prueba lo GUARDADO, no lo tecleado sin guardar.
+        $testurl = new moodle_url('/mod/videoconnect/testconnection.php',
+            ['return' => 'manage', 'sesskey' => sesskey()]);
+        $mform->addElement('static', 'testconnection', '',
+            html_writer::link($testurl, get_string('testconnection', 'mod_videoconnect'),
+                ['class' => 'btn btn-secondary']));
 
         $scopesoptions = array_combine(self::SCOPES, self::SCOPES);
         $scopes = $mform->addElement(
@@ -119,7 +126,7 @@ class settings_form extends moodleform {
      * @param array $data
      * @param array $files
      * @return array
-     * @throws \coding_exception
+     * @throws coding_exception|dml_exception
      */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);

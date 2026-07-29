@@ -29,15 +29,14 @@ $capabilities = [
 
     // Whether or not the user can add the module.
     'mod/videoconnect:addinstance' => [
+        'riskbitmask' => RISK_XSS,
         'captype' => 'write',
-        'contextlevel' => CONTEXT_MODULE,
+        'contextlevel' => CONTEXT_COURSE,
         'archetypes' => [
-            'student' => CAP_PROHIBIT,
-            'teacher' => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
             'manager' => CAP_ALLOW,
         ],
-        'clonepermissionsfrom' => 'moodle/site:manageblocks',
+        'clonepermissionsfrom' => 'moodle/course:manageactivities',
     ],
 
     // Whether or not a user can see the module.

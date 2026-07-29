@@ -25,21 +25,23 @@
 
 namespace mod_videoconnect\event;
 
+use core\event\course_module_viewed as core_course_module_viewed;
+
 /**
- * The mod_tresipuntaudio course module viewed event class.
+ * The mod_videoconnect course module viewed event class.
  *
  * @package    mod_videoconnect
  * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
  * @author     3IPUNT <contacte@tresipunt.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class course_module_viewed extends \core\event\course_module_viewed {
+class course_module_viewed extends core_course_module_viewed {
     /**
      * Init method.
      *
      * @return void
      */
-    protected function init() {
+    protected function init(): void {
         $this->data['objecttable'] = 'videoconnect';
         $this->data['crud'] = 'r';
         $this->data['edulevel'] = self::LEVEL_PARTICIPATING;

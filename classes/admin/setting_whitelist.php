@@ -26,6 +26,7 @@
 namespace mod_videoconnect\admin;
 
 use admin_setting_configtextarea;
+use coding_exception;
 use mod_videoconnect\videoconnect;
 
 defined('MOODLE_INTERNAL') || die();
@@ -48,8 +49,9 @@ class setting_whitelist extends admin_setting_configtextarea {
      *
      * @param string $data Raw textarea value.
      * @return string Empty string on success, error message otherwise.
+     * @throws coding_exception
      */
-    public function write_setting($data) {
+    public function write_setting($data): string {
         $domains = videoconnect::parse_domains((string) $data);
         foreach ($domains as $domain) {
             if (!videoconnect::is_valid_domain($domain)) {
