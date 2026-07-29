@@ -42,7 +42,7 @@ class restore_videoconnect_activity_task extends restore_activity_task {
     /**
      * Define (add) particular steps this activity can have
      */
-    protected function define_my_steps() {
+    protected function define_my_steps(): void {
         $this->add_step(new restore_videoconnect_activity_structure_step(
             'videoconnect_structure',
             'videoconnect.xml'
@@ -53,7 +53,7 @@ class restore_videoconnect_activity_task extends restore_activity_task {
      * Define the contents in the activity that must be
      * processed by the link decoder
      */
-    public static function define_decode_contents() {
+    public static function define_decode_contents(): array {
         return [];
     }
 
@@ -61,7 +61,7 @@ class restore_videoconnect_activity_task extends restore_activity_task {
      * Define the decoding rules for links belonging
      * to the activity to be executed by the link decoder
      */
-    public static function define_decode_rules() {
+    public static function define_decode_rules(): array {
         return [];
     }
 
@@ -71,7 +71,7 @@ class restore_videoconnect_activity_task extends restore_activity_task {
      * videoconnect logs. It must return one array
      * of {@see restore_log_rule} objects
      */
-    public static function define_restore_log_rules() {
+    public static function define_restore_log_rules(): array {
         $rules = [];
         $rules[] = new restore_log_rule(
             'videoconnect',
@@ -104,7 +104,7 @@ class restore_videoconnect_activity_task extends restore_activity_task {
      * by the restore final task, but are defined here at
      * activity level. All them are rules not linked to any module instance (cmid = 0)
      */
-    public static function define_restore_log_rules_for_course() {
+    public static function define_restore_log_rules_for_course(): array {
         $rules = [];
         $rules[] = new restore_log_rule(
             'videoconnect',

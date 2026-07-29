@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Module Tresipunt CSV Export Class.
+ * Capability definitions for mod_videoconnect.
  *
  * @package     mod_videoconnect
  * @copyright   2021-2024 3ipunt {@link https://www.tresipunt.com}
@@ -29,15 +29,14 @@ $capabilities = [
 
     // Whether or not the user can add the module.
     'mod/videoconnect:addinstance' => [
+        'riskbitmask' => RISK_XSS,
         'captype' => 'write',
-        'contextlevel' => CONTEXT_MODULE,
+        'contextlevel' => CONTEXT_COURSE,
         'archetypes' => [
-            'student' => CAP_PROHIBIT,
-            'teacher' => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
             'manager' => CAP_ALLOW,
         ],
-        'clonepermissionsfrom' => 'moodle/site:manageblocks',
+        'clonepermissionsfrom' => 'moodle/course:manageactivities',
     ],
 
     // Whether or not a user can see the module.
@@ -48,6 +47,31 @@ $capabilities = [
             'student' => CAP_ALLOW,
             'teacher' => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+    ],
+
+    // Whether or not the user can configure the global Vimeo settings of the
+    // plugin from manage.php without requiring moodle/site:config.
+    'mod/videoconnect:configure' => [
+        'riskbitmask' => RISK_CONFIG,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [
+            'manager' => CAP_ALLOW,
+        ],
+    ],
+
+    // Whether or not the user can use the control panel (panel.php): view
+    // every Video Connect activity of the site, the upload attempts and
+    // retry/discard failed or pending uploads. Separate from :configure on
+    // purpose: managing videos and managing credentials may belong to
+    // different profiles.
+    'mod/videoconnect:managevideos' => [
+        'riskbitmask' => RISK_DATALOSS,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [
             'manager' => CAP_ALLOW,
         ],
     ],

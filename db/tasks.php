@@ -23,7 +23,7 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use mod_videoconnect\tasks\upload_videos_task;
+use mod_videoconnect\task\upload_videos_task;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -36,6 +36,6 @@ $tasks = [
         'day' => '*',
         'month' => '*',
         'dayofweek' => '*',
-            'disabled' => 0,
+        'disabled' => 0,
     ],
 ];

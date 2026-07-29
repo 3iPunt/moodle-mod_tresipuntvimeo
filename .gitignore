@@ -48,3 +48,6 @@ Thumbs.db
 *.mov
 *.wmv
 
+
+# Composer: las dependencias viven en .extlib/vendor (config.vendor-dir)
+/vendor/
