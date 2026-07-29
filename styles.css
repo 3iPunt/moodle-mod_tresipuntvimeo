@@ -37,6 +37,8 @@
    nuestra pantalla ya trae la suya. Doble id para ganar especificidad. */
 #page-mod-videoconnect-panel #region-main {
     background-color: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
 }
 
 .mod_videoconnect-panel {
