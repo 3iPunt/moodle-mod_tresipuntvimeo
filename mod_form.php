@@ -25,6 +25,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+use mod_videoconnect\provider\provider_manager;
+
 require_once($CFG->dirroot . '/course/moodleform_mod.php');
 
 /**
@@ -75,11 +77,7 @@ class mod_videoconnect_mod_form extends moodleform_mod {
         $mform->addHelpButton('name', 'videoconnectname', 'mod_videoconnect');
 
         // Adding the standard "intro" and "introformat" fields.
-        if ($CFG->branch >= 29) {
-            $this->standard_intro_elements();
-        } else {
-            $this->add_intro_editor();
-        }
+        $this->standard_intro_elements();
 
         $mform->addElement(
             'text',
@@ -95,7 +93,10 @@ class mod_videoconnect_mod_form extends moodleform_mod {
             'client'
         );
 
-        $mform->setType('idvideo', PARAM_INT);
+        // Raw on purpose: accepts a numeric ID or a pasted Vimeo URL; it is
+        // validated in validation() and normalised to the numeric ID in
+        // data_postprocessing().
+        $mform->setType('idvideo', PARAM_RAW_TRIMMED);
         $mform->addHelpButton('idvideo', 'idvideo', 'mod_videoconnect');
 
         $filemanageroptions['accepted_types'] = ['.mp4', '.mov', '.wmv', '.avi', '.flv'];
@@ -111,10 +112,52 @@ class mod_videoconnect_mod_form extends moodleform_mod {
             $filemanageroptions
         );
 
+        // Embebido en la página del curso (histórico, default) o solo
+        // dentro de la actividad.
+        $mform->addElement(
+            'advcheckbox',
+            'displayinline',
+            get_string('displayinline', 'mod_videoconnect')
+        );
+        $mform->addHelpButton('displayinline', 'displayinline', 'mod_videoconnect');
+        $mform->setDefault('displayinline', 1);
+
         // Add standard elements.
         $this->standard_coursemodule_elements();
 
         // Add standard buttons.
         $this->add_action_buttons();
+    }
+
+    /**
+     * Validates the form data.
+     *
+     * The video reference (plain ID or pasted URL) is parsed by the active
+     * provider connector: each provider knows its own URL formats.
+     *
+     * @param array $data
+     * @param array $files
+     * @return array
+     * @throws coding_exception
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+        if (!empty($data['idvideo'])
+                && provider_manager::get_active()->parse_video_reference($data['idvideo']) === null) {
+            $errors['idvideo'] = get_string('idvideo_invalid', 'mod_videoconnect');
+        }
+        return $errors;
+    }
+
+    /**
+     * Normalises idvideo to the plain numeric ID before it is saved.
+     *
+     * @param stdClass $data Form data.
+     */
+    public function data_postprocessing($data) {
+        parent::data_postprocessing($data);
+        if (isset($data->idvideo)) {
+            $data->idvideo = (string) (provider_manager::get_active()->parse_video_reference($data->idvideo) ?? '');
+        }
     }
 }

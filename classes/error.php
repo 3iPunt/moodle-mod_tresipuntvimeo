@@ -24,11 +24,6 @@
  */
 
 namespace mod_videoconnect;
-use curl;
-use dml_exception;
-use lang_string;
-use moodle_exception;
-use stdClass;
 
 /**
  * Error Response
@@ -40,10 +35,10 @@ use stdClass;
  */
 class error {
     /** @var int Error Code */
-    public $code;
+    public int $code;
 
     /** @var string Error Message */
-    public $message;
+    public string $message;
 
     /**
      * Error constructor.

@@ -23,11 +23,14 @@
  */
 
 /**
- * Define all the restore steps that will be used by the restore_url_activity_task
- */
-
-/**
- * Structure step to restore one videoconnect activity
+ * Structure step to restore one videoconnect activity.
+ *
+ * Old backups without the provider field restore with the DB default
+ * ('vimeo'), which is correct: every pre-2.1.0 video is a Vimeo video.
+ *
+ * @package    mod_videoconnect
+ * @copyright  2024 Tresipunt
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_videoconnect_activity_structure_step extends restore_activity_structure_step {
     /**
@@ -35,7 +38,7 @@ class restore_videoconnect_activity_structure_step extends restore_activity_stru
      *
      * @return mixed
      */
-    protected function define_structure() {
+    protected function define_structure(): mixed {
         $paths = [];
         $paths[] = new restore_path_element('videoconnect', '/activity/videoconnect');
         return $this->prepare_activity_structure($paths);
@@ -48,7 +51,7 @@ class restore_videoconnect_activity_structure_step extends restore_activity_stru
      * @throws base_step_exception
      * @throws dml_exception
      */
-    protected function process_videoconnect($data) {
+    protected function process_videoconnect(array $data): void {
         global $DB;
         $data = (object)$data;
         $oldid = $data->id;
@@ -60,7 +63,7 @@ class restore_videoconnect_activity_structure_step extends restore_activity_stru
     /**
      * After Execute.
      */
-    protected function after_execute() {
+    protected function after_execute(): void {
         $this->add_related_files('mod_videoconnect', 'intro', null);
     }
 }

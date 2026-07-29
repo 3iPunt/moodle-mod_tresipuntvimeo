@@ -1,0 +1,200 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_videoconnect/panel_page
+
+    Video Connect control panel: co-branded header, cron warning, state
+    counters (quick filters), single filter form and videos table.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * data-region="mod_videoconnect-panel"
+
+    Context variables required for this template:
+    * logotresipunt, logoprovider, providername, headertitle, headerdesc:
+      strings - Co-branded header (see page_header template).
+    * updated: string - Formatted "data as of" time.
+    * refreshurl: string - URL reloading the panel with the same filters.
+    * settingsurl: string|null - Plugin settings URL (null hides the button).
+    * warning: string - Optional cron warning message.
+    * counters: array - One entry per derived state (quick filters):
+        * state, label, icon, tone: string - Badge data.
+        * count: int - Activities in that state.
+        * active: boolean - Whether this filter is on.
+        * url: string - Toggle URL.
+    * action: string - Filter form action URL.
+    * courseid: int|null, coursename: string - Active course scope.
+    * states: array - Options (value, label, selected) of the state select.
+    * currentstate, search, datefrom, dateto: string - Active filter values.
+    * hasfilters: boolean - Whether any filter is active.
+    * reseturl: string - URL clearing every filter.
+    * hasrows: boolean - Whether the table has rows.
+    * noresults: boolean - Filters active but nothing matched.
+    * emptyinitial: boolean - The site has no activities at all.
+    * table: string - Rendered table HTML.
+
+    Example context (json):
+    {
+        "logotresipunt": "#", "logoprovider": "#", "providername": "Vimeo",
+        "headertitle": "Video Connect control panel",
+        "headerdesc": "Every campus video with its publication state.",
+        "updated": "28/07/26 16:00", "refreshurl": "#", "settingsurl": "#",
+        "warning": "",
+        "counters": [{"state": "published", "label": "Published", "icon": "fa-circle-check",
+                      "tone": "success", "count": 12, "active": false, "url": "#"}],
+        "action": "#", "courseid": null, "coursename": "",
+        "states": [{"value": "error", "label": "Upload error", "selected": false}],
+        "currentstate": "", "search": "", "datefrom": "", "dateto": "",
+        "hasfilters": false, "reseturl": "#",
+        "hasrows": true, "noresults": false, "emptyinitial": false,
+        "table": "<table></table>"
+    }
+}}
+<div data-region="mod_videoconnect-panel" class="mod_videoconnect-panel">
+    <div class="vc-header">
+        {{> mod_videoconnect/page_header }}
+        <div class="vc-header-actions">
+            <div class="vc-updated">
+                <span class="vc-updated-label">{{#str}} updated, mod_videoconnect {{/str}}</span>
+                <span class="vc-updated-time">{{updated}}</span>
+            </div>
+            <a href="{{refreshurl}}" class="btn btn-outline-secondary vc-btn-icon">
+                <i class="fa fa-arrows-rotate" aria-hidden="true"></i> {{#str}} refresh {{/str}}
+            </a>
+            {{#settingsurl}}
+            <a href="{{settingsurl}}" class="btn btn-link vc-btn-icon text-muted">
+                <i class="fa fa-gear" aria-hidden="true"></i> {{#str}} settings {{/str}}
+            </a>
+            {{/settingsurl}}
+        </div>
+    </div>
+
+    {{#warning}}
+    <div class="alert alert-warning vc-alert" role="alert">
+        <i class="fa fa-triangle-exclamation" aria-hidden="true"></i>
+        <div>
+            <strong class="vc-alert-title">{{#str}} cronstale_title, mod_videoconnect {{/str}}</strong>
+            <span>{{warning}}</span>
+        </div>
+    </div>
+    {{/warning}}
+
+    <div class="vc-kpis">
+        {{#counters}}
+        <a href="{{url}}" class="vc-kpi vc-kpi-{{tone}}{{#active}} active{{/active}}"
+           {{#active}}aria-current="true"{{/active}}>
+            <span class="vc-kpi-count">{{count}}</span>
+            <span class="vc-badge vc-badge-{{tone}}">
+                <i class="fa {{icon}}" aria-hidden="true"></i>{{label}}
+            </span>
+        </a>
+        {{/counters}}
+    </div>
+
+    <div class="vc-filters-toggle">
+        <button type="button" class="btn btn-outline-secondary vc-btn-icon"
+                data-toggle="collapse" data-bs-toggle="collapse"
+                data-target="#vc-filters-collapse" data-bs-target="#vc-filters-collapse"
+                aria-expanded="{{#hasfilters}}true{{/hasfilters}}{{^hasfilters}}false{{/hasfilters}}"
+                aria-controls="vc-filters-collapse">
+            <i class="fa fa-filter" aria-hidden="true"></i> {{#str}} filters {{/str}}
+            <i class="fa fa-chevron-down vc-toggle-chevron" aria-hidden="true"></i>
+        </button>
+    </div>
+
+    {{! Colapsados por defecto; expandidos cuando hay filtros activos para
+        que un filtrado aplicado nunca quede invisible. }}
+    <div class="collapse{{#hasfilters}} show{{/hasfilters}}" id="vc-filters-collapse">
+        <form method="get" action="{{action}}" class="vc-filters card">
+            <div class="vc-filter vc-filter-course">
+                {{! Sin opción "todos" seleccionable: la ausencia de selección
+                    ya significa todos los cursos (placeholder del widget). }}
+                {{! Los data-* los exige core/form-course-selector: sin
+                    data-requiredcapabilities su transport lanza TypeError y la
+                    búsqueda de cursos no funciona. }}
+                <select id="vc-filter-course" name="courseid" class="custom-select form-select"
+                        aria-label="{{#str}} coursescope, mod_videoconnect {{/str}}"
+                        data-requiredcapabilities="" data-exclude=""
+                        data-limittoenrolled="0" data-includefrontpage="0"
+                        data-onlywithcompletion="0">
+                    {{#courseid}}
+                    <option value="{{courseid}}" selected>{{coursename}}</option>
+                    {{/courseid}}
+                </select>
+            </div>
+            <div class="vc-filter vc-filter-state">
+                <select name="state" class="custom-select form-select"
+                        aria-label="{{#str}} videostate, mod_videoconnect {{/str}}">
+                    <option value="">{{#str}} filter_allstates, mod_videoconnect {{/str}}</option>
+                    {{#states}}
+                    <option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
+                    {{/states}}
+                </select>
+            </div>
+            <div class="vc-filter vc-filter-search">
+                <input type="text" name="search" value="{{search}}" class="form-control"
+                       aria-label="{{#str}} search {{/str}}"
+                       placeholder="{{#str}} searchname_placeholder, mod_videoconnect {{/str}}">
+            </div>
+            <label class="vc-filter vc-filter-date">
+                <span class="vc-filter-label">{{#str}} fromdate, mod_videoconnect {{/str}}</span>
+                <input type="date" name="datefrom" value="{{datefrom}}" class="form-control">
+            </label>
+            <label class="vc-filter vc-filter-date">
+                <span class="vc-filter-label">{{#str}} todate, mod_videoconnect {{/str}}</span>
+                <input type="date" name="dateto" value="{{dateto}}" class="form-control">
+            </label>
+            <div class="vc-filter-actions">
+                <button type="submit" class="btn btn-primary vc-btn-icon">
+                    <i class="fa fa-filter" aria-hidden="true"></i> {{#str}} filter {{/str}}
+                </button>
+                {{#hasfilters}}
+                <a href="{{reseturl}}" class="btn btn-link vc-btn-icon">
+                    <i class="fa fa-xmark" aria-hidden="true"></i> {{#str}} clearfilters, mod_videoconnect {{/str}}
+                </a>
+                {{/hasfilters}}
+            </div>
+        </form>
+    </div>
+
+    <div class="card vc-table-card">
+        {{#hasrows}}
+        <div class="card-body">
+            {{{table}}}
+        </div>
+        {{/hasrows}}
+        {{#noresults}}
+        <div class="vc-empty">
+            <span class="vc-empty-icon vc-tone-neutral" aria-hidden="true"><i class="fa fa-magnifying-glass"></i></span>
+            <span class="vc-empty-title">{{#str}} noresults_title, mod_videoconnect {{/str}}</span>
+            <p class="vc-empty-sub">{{#str}} noresults_sub, mod_videoconnect {{/str}}</p>
+            <a href="{{reseturl}}" class="btn btn-outline-secondary">{{#str}} clearfilters, mod_videoconnect {{/str}}</a>
+        </div>
+        {{/noresults}}
+        {{#emptyinitial}}
+        <div class="vc-empty">
+            <span class="vc-empty-icon vc-tone-brand" aria-hidden="true"><i class="fa fa-film"></i></span>
+            <span class="vc-empty-title">{{#str}} emptyinitial_title, mod_videoconnect {{/str}}</span>
+            <p class="vc-empty-sub">{{#str}} emptyinitial_sub, mod_videoconnect {{/str}}</p>
+        </div>
+        {{/emptyinitial}}
+    </div>
+</div>
+{{#js}}
+require(['mod_videoconnect/panel'], function(Panel) {
+    Panel.init('vc-filter-course', {{#quote}}{{#coursename}}{{coursename}}{{/coursename}}{{^coursename}}{{#str}} filter_allcourses, mod_videoconnect {{/str}}{{/coursename}}{{/quote}});
+});
+{{/js}}
