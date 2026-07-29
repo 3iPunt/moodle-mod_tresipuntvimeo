@@ -53,10 +53,6 @@ class response {
     public function __construct(bool $success, string $data, error $error) {
         $this->success = $success;
         $this->data = $data;
-        if (isset($error)) {
-            $this->error = $error;
-        } else {
-            $this->error = new error(0, '');
-        }
+        $this->error = $error;
     }
 }

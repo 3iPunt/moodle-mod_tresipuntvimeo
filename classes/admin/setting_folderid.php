@@ -26,6 +26,8 @@
 namespace mod_videoconnect\admin;
 
 use admin_setting_configtext;
+use coding_exception;
+use dml_exception;
 use mod_videoconnect\videoconnect;
 
 defined('MOODLE_INTERNAL') || die();
@@ -48,8 +50,10 @@ class setting_folderid extends admin_setting_configtext {
      *
      * @param string $data Raw form value (ID or folder URL).
      * @return string Empty string on success, error message otherwise.
+     * @throws dml_exception
+     * @throws coding_exception
      */
-    public function write_setting($data) {
+    public function write_setting($data): string {
         $folderid = videoconnect::extract_folderid((string) $data);
         if ($folderid === null) {
             return get_string('folderid_invalid', 'mod_videoconnect');

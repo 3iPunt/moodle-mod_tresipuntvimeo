@@ -14,7 +14,8 @@
 {{!
     @template mod_videoconnect/detail_page
 
-    Upload attempts detail of one Video Connect activity.
+    Upload attempts detail of one Video Connect activity: co-branded header
+    with the activity data, diagnosis card and attempts history.
 
     Classes required for JS:
     * none
@@ -23,94 +24,163 @@
     * data-region="mod_videoconnect-detail"
 
     Context variables required for this template:
-    * name: string - Activity name.
-    * coursename: string - Course full name.
-    * courseurl: string - URL of the course.
-    * activityurl: string - URL of the activity view page.
-    * statelabel: string - Derived state label.
-    * hasvideo: boolean - Whether the activity has a published video.
-    * idvideo: string - Vimeo video ID.
-    * videourl: string - URL of the video on Vimeo.
+    * logotresipunt, logoprovider, providername: strings - Header logos.
     * backurl: string - URL back to the panel list.
-    * hasattempts: boolean - Whether there are upload attempts.
-    * attempts: array - Upload attempts, newest first.
-        * timecreated: string - Formatted creation time.
-        * timeuploaded: string - Formatted upload time or '-'.
-        * statuslabel: string - Status label.
-        * badgeclass: string - CSS class of the status badge.
-        * httperror: string - HTTP error detail, may be empty.
-        * fileavailable: boolean - Whether the temp file still exists.
+    * name: string - Activity name. activityurl: string - Its view page.
+    * coursename, courseurl: string - Course of the activity.
+    * badge: object - State badge (label, icon, tone, spin).
+    * hasvideo: boolean. idvideo: string. videourl: string.
+    * hasdiag: boolean. diag: object - Diagnosis card (tone, icon, spin, title, body).
+    * hasattempts: boolean. noattemptsnote: string.
+    * attempts: array - Upload attempts, newest first:
+        * timecreated, timeuploaded: string - Formatted times.
+        * badge: object - Status badge (label, icon, tone, spin).
+        * note: string - Human detail of the attempt.
+        * fileavailable, canretry, candiscard, notrecoverable, noactions: boolean.
+        * retryurl, discardurl: string - Action URLs (with sesskey).
 
     Example context (json):
     {
-        "name": "My video",
-        "coursename": "My course",
-        "courseurl": "#",
-        "activityurl": "#",
-        "statelabel": "Upload error",
-        "hasvideo": false,
-        "idvideo": "",
-        "videourl": "",
+        "logotresipunt": "#", "logoprovider": "#", "providername": "Vimeo",
         "backurl": "#",
-        "hasattempts": true,
-        "attempts": [
-            {"timecreated": "5/06/26 17:18", "timeuploaded": "-", "statuslabel": "Upload failed",
-             "badgeclass": "badge text-bg-danger", "httperror": "Unable to initiate an upload (3000)", "fileavailable": true}
-        ]
+        "name": "My video", "activityurl": "#",
+        "coursename": "My course", "courseurl": "#",
+        "badge": {"label": "Upload error", "icon": "fa-circle-xmark", "tone": "danger", "spin": false},
+        "hasvideo": false, "idvideo": "", "videourl": "",
+        "hasdiag": true,
+        "diag": {"tone": "warning", "icon": "fa-triangle-exclamation", "spin": false,
+                 "title": "The upload failed, but you can retry it",
+                 "body": "The temporary file is kept, so you can retry from here."},
+        "hasattempts": true, "noattemptsnote": "",
+        "attempts": [{"timecreated": "5/06/26 17:18", "timeuploaded": "—",
+                      "badge": {"label": "Upload failed", "icon": "fa-triangle-exclamation", "tone": "danger", "spin": false},
+                      "note": "Unable to initiate an upload (3000)",
+                      "fileavailable": true, "canretry": true, "candiscard": true,
+                      "notrecoverable": false, "noactions": false,
+                      "retryurl": "#", "discardurl": "#"}]
     }
 }}
-<div data-region="mod_videoconnect-detail">
-    <div class="mb-3">
-        <a href="{{backurl}}" class="btn btn-secondary mb-3">&larr; {{# str }} backtopanel, mod_videoconnect {{/ str }}</a>
-        <h3><a href="{{activityurl}}">{{name}}</a></h3>
-        <p class="mb-1">
-            {{# str }} course {{/ str }}: <a href="{{courseurl}}">{{coursename}}</a>
-            &middot; {{# str }} videostate, mod_videoconnect {{/ str }}: <strong>{{statelabel}}</strong>
-            {{#hasvideo}}
-            &middot; {{# str }} idvideo, mod_videoconnect {{/ str }}:
-            <a href="{{videourl}}" target="_blank" rel="noopener">{{idvideo}}</a>
-            {{/hasvideo}}
-        </p>
+<div data-region="mod_videoconnect-detail" class="mod_videoconnect-panel">
+    <a href="{{backurl}}" class="vc-back">
+        <i class="fa fa-arrow-left" aria-hidden="true"></i> {{#str}} backtopanel, mod_videoconnect {{/str}}
+    </a>
+
+    <div class="vc-header">
+        <div class="vc-header-brand">
+            <img src="{{logotresipunt}}" alt="Tresipunt" class="vc-header-logo">
+            <span class="vc-header-divider" aria-hidden="true"></span>
+            <img src="{{logoprovider}}" alt="{{#str}} provideralt, mod_videoconnect, {{providername}} {{/str}}" class="vc-header-logo">
+        </div>
+        <div class="vc-header-text">
+            <h1 class="vc-header-title">
+                <a href="{{activityurl}}">{{name}}
+                    <i class="fa fa-up-right-from-square vc-header-extlink" aria-hidden="true"></i></a>
+            </h1>
+            <div class="vc-header-meta">
+                <a href="{{courseurl}}" class="text-muted">
+                    <i class="fa fa-book" aria-hidden="true"></i> {{coursename}}
+                </a>
+                <span class="vc-meta-dot" aria-hidden="true"></span>
+                {{#badge}}
+                <span class="vc-badge vc-badge-{{tone}}">
+                    <i class="fa {{icon}} {{#spin}}fa-spin{{/spin}}" aria-hidden="true"></i>{{label}}
+                </span>
+                {{/badge}}
+                <span class="vc-meta-dot" aria-hidden="true"></span>
+                {{#hasvideo}}
+                <a href="{{videourl}}" target="_blank" rel="noopener" class="vc-link">
+                    {{#str}} providervideo, mod_videoconnect {{/str}} · {{idvideo}}
+                    <i class="fa fa-up-right-from-square" aria-hidden="true"></i>
+                </a>
+                {{/hasvideo}}
+                {{^hasvideo}}
+                <span class="text-muted">{{#str}} novideoid, mod_videoconnect {{/str}}</span>
+                {{/hasvideo}}
+            </div>
+        </div>
     </div>
-    <h4>{{# str }} uploadattempts, mod_videoconnect {{/ str }}</h4>
+
+    {{#hasdiag}}
+    {{#diag}}
+    <div class="vc-diag vc-diag-{{tone}}" role="status">
+        <i class="fa {{icon}} {{#spin}}fa-spin{{/spin}}" aria-hidden="true"></i>
+        <div>
+            <strong class="vc-diag-title">{{title}}</strong>
+            <p class="vc-diag-body">{{body}}</p>
+        </div>
+    </div>
+    {{/diag}}
+    {{/hasdiag}}
+
+    <h2 class="vc-section-title">
+        <i class="fa fa-film" aria-hidden="true"></i> {{#str}} uploadattempts, mod_videoconnect {{/str}}
+    </h2>
+
     {{#hasattempts}}
-    <table class="generaltable">
-        <thead>
-            <tr>
-                <th>{{# str }} date {{/ str }}</th>
-                <th>{{# str }} status {{/ str }}</th>
-                <th>{{# str }} errordetail, mod_videoconnect {{/ str }}</th>
-                <th>{{# str }} uploaddate, mod_videoconnect {{/ str }}</th>
-                <th>{{# str }} fileavailable, mod_videoconnect {{/ str }}</th>
-                <th>{{# str }} actions {{/ str }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{#attempts}}
-            <tr>
-                <td>{{timecreated}}</td>
-                <td><span class="{{badgeclass}}">{{statuslabel}}</span></td>
-                <td>{{#httperror}}{{httperror}}{{/httperror}}{{^httperror}}-{{/httperror}}</td>
-                <td>{{timeuploaded}}</td>
-                <td>{{#fileavailable}}{{# str }} yes {{/ str }}{{/fileavailable}}{{^fileavailable}}{{# str }} no {{/ str }}{{/fileavailable}}</td>
-                <td>
-                    {{#canretry}}
-                    <a href="{{retryurl}}" class="btn btn-sm btn-primary">{{# str }} retry, mod_videoconnect {{/ str }}</a>
-                    {{/canretry}}
-                    {{#candiscard}}
-                    <a href="{{discardurl}}" class="btn btn-sm btn-outline-danger">{{# str }} discard, mod_videoconnect {{/ str }}</a>
-                    {{/candiscard}}
-                    {{#notrecoverable}}
-                    <span class="text-muted small">{{# str }} notrecoverable, mod_videoconnect {{/ str }}</span>
-                    {{/notrecoverable}}
-                    {{^canretry}}{{^candiscard}}{{^notrecoverable}}-{{/notrecoverable}}{{/candiscard}}{{/canretry}}
-                </td>
-            </tr>
-            {{/attempts}}
-        </tbody>
-    </table>
+    <div class="card vc-table-card">
+        <div class="card-body">
+            <table class="generaltable vc-attempts-table">
+                <caption class="sr-only visually-hidden">{{#str}} uploadattempts, mod_videoconnect {{/str}}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{#str}} date {{/str}}</th>
+                        <th scope="col">{{#str}} status {{/str}}</th>
+                        <th scope="col">{{#str}} errordetail, mod_videoconnect {{/str}}</th>
+                        <th scope="col">{{#str}} uploaddate, mod_videoconnect {{/str}}</th>
+                        <th scope="col">{{#str}} fileavailable, mod_videoconnect {{/str}}</th>
+                        <th scope="col">{{#str}} actions {{/str}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#attempts}}
+                    <tr>
+                        <td>{{timecreated}}</td>
+                        <td>
+                            {{#badge}}
+                            <span class="vc-badge vc-badge-{{tone}}">
+                                <i class="fa {{icon}} {{#spin}}fa-spin{{/spin}}" aria-hidden="true"></i>{{label}}
+                            </span>
+                            {{/badge}}
+                        </td>
+                        <td class="vc-attempt-note" title="{{note}}">{{note}}</td>
+                        <td>{{timeuploaded}}</td>
+                        <td>
+                            {{#fileavailable}}
+                            <span class="vc-file vc-tone-success"><i class="fa fa-check" aria-hidden="true"></i> {{#str}} yes {{/str}}</span>
+                            {{/fileavailable}}
+                            {{^fileavailable}}
+                            <span class="vc-file text-muted"><i class="fa fa-xmark" aria-hidden="true"></i> {{#str}} no {{/str}}</span>
+                            {{/fileavailable}}
+                        </td>
+                        <td class="vc-attempt-actions">
+                            {{#canretry}}
+                            <a href="{{retryurl}}" class="btn btn-primary btn-sm vc-btn-icon">
+                                <i class="fa fa-rotate" aria-hidden="true"></i> {{#str}} retry, mod_videoconnect {{/str}}
+                            </a>
+                            {{/canretry}}
+                            {{#candiscard}}
+                            <a href="{{discardurl}}" class="btn btn-outline-danger btn-sm vc-btn-icon">
+                                <i class="fa fa-xmark" aria-hidden="true"></i> {{#str}} discard, mod_videoconnect {{/str}}
+                            </a>
+                            {{/candiscard}}
+                            {{#notrecoverable}}
+                            <span class="text-muted small">
+                                <i class="fa fa-minus" aria-hidden="true"></i> {{#str}} notrecoverable_label, mod_videoconnect {{/str}}
+                            </span>
+                            {{/notrecoverable}}
+                            {{#noactions}}<span class="text-muted">—</span>{{/noactions}}
+                        </td>
+                    </tr>
+                    {{/attempts}}
+                </tbody>
+            </table>
+        </div>
+    </div>
     {{/hasattempts}}
     {{^hasattempts}}
-    <p class="text-muted">{{# str }} noattempts, mod_videoconnect {{/ str }}</p>
+    <div class="vc-empty vc-empty-dashed">
+        <span class="vc-empty-icon vc-tone-neutral" aria-hidden="true"><i class="fa fa-film"></i></span>
+        <p class="vc-empty-sub">{{noattemptsnote}}</p>
+    </div>
     {{/hasattempts}}
 </div>

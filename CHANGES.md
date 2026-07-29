@@ -1,5 +1,95 @@
 # Changelog — mod_videoconnect
 
+## Versión 2.1.0 — 2026-07-29 (`2026072900`)
+
+### Objetivo
+Plugin agnóstico del proveedor de vídeo, rediseño de la interfaz y
+saneamiento integral tras auditoría.
+
+### ⚠️ Cambios de requisitos
+
+- **Mínimo soportado: Moodle 4.5** (antes 4.3). El markup es dual
+  Bootstrap 4/5.
+- El rol **profesor sin permiso de edición** deja de tener
+  `mod/videoconnect:addinstance` por defecto (definición heterodoxa;
+  ahora `editingteacher` y `manager`, clonando de
+  `moodle/course:manageactivities`).
+
+### Novedades
+
+- **Conector de proveedor de vídeo**: el núcleo trabaja contra
+  `provider_interface`; Vimeo es el conector incluido (`vimeo_provider`).
+  Añadir otro proveedor = escribir un conector y registrarlo en
+  `provider_manager`. Nueva columna `videoconnect.provider`: cada actividad
+  queda sellada con el proveedor que la creó y se reproduce siempre con su
+  conector.
+- **Rediseño de la vista, el panel y el detalle** (design system de la
+  familia Tresipunt): tarjeta de estado 16:9 responsive en la vista con
+  mensajes por rol (el detalle técnico solo para gestores), panel con
+  cabecera co-brandada, KPIs-filtro, filtros colapsables con autocompletado
+  de curso (corregido: no funcionaba la búsqueda) y tabla renovada; detalle
+  con tarjeta de diagnóstico que traduce el estado a acción.
+- **«Mostrar el vídeo en la página del curso»** (`displayinline`): cada
+  actividad decide si se embebe en el curso (comportamiento histórico,
+  default) o solo dentro de la actividad. También se respeta el ajuste
+  estándar «Muestra la descripción» (`FEATURE_SHOW_DESCRIPTION`).
+- **«Probar conexión»** en los ajustes: valida credenciales contra el
+  proveedor y avisa de los scopes que faltan para el flujo completo.
+- **Suite PHPUnit** (36 tests: conector, helper y modelo de subidas).
+- **README nuevo** (inglés + español) con la lista real de scopes
+  (`public, private, upload, edit, interact`) y toda la funcionalidad
+  actual; catalán completado (145 claves en los 3 idiomas).
+
+### Correcciones
+
+- El mensaje de error HTTP del proveedor ya no se muestra a los alumnos.
+- La tarea de subida: un fallo de BD ya no marca la fila como «actividad
+  eliminada», los errores inesperados quedan registrados y en estado
+  reintentable (nunca filas huérfanas en «subiendo»), y las filas atascadas
+  de runs muertos se rescatan automáticamente (umbral 6 h).
+- Guarda del token vacío en modo PAT (antes `TypeError` fatal en el cron) y
+  excepciones del cliente Vimeo construidas correctamente.
+- Al crear una actividad con ID y fichero a la vez, el ID antiguo ya no
+  queda embebido hasta que corre el cron.
+- Los ficheros temporales se eliminan tras publicar y al borrar la
+  actividad; `videoconnect_uploads` gana índices (`status` e
+  `instance,id`).
+- La página del curso hace 1 consulta por curso (antes 2 por actividad) y
+  ya no se reconstruye la caché del curso en cada subida.
+- Doble escapado de nombres (`format_string` + Mustache) corregido en
+  vista, panel, detalle e índice.
+- El backup incluye los campos nuevos (`provider`, `displayinline`); la
+  cola de subidas queda fuera a propósito (rutas temporales locales).
+
+### Notas de actualización
+
+- El upgrade `2026072900` añade `videoconnect.provider`,
+  `videoconnect.displayinline` y los índices; las filas existentes quedan
+  como `vimeo` / visible en curso (comportamiento previo).
+- Tras actualizar: purgar cachés. Si se compila JS: `grunt amd`.
+
+---
+
+## Versión 2.0.0 — 2026-06-05 (`2026060502`)
+
+### Objetivo
+Actualización mayor de la dependencia de la API de Vimeo.
+
+### Cambios
+
+- **`vimeo/vimeo-api` actualizado de 3.x a 4.0.1**: la 4.x incorpora su
+  propio cliente de subida resumible (TUS) y elimina la dependencia
+  `ankitpokhrel/tus-php` y todo su árbol (predis, carbon, ramsey/uuid,
+  symfony console…): de ~24 paquetes vendorizados a 10.
+- `.extlib/vendor/` queda como **único autoload** de terceros, gestionado
+  por Composer (`config.vendor-dir`), y `thirdpartylibs.xml` sincronizado
+  con el árbol real.
+- Sin cambios funcionales para el usuario: los flujos de subida y embebido
+  se mantienen; versión mayor por el cambio de la superficie de
+  dependencias.
+
+---
+
 ## Versión 1.3.0 — 2026-06-05 (`2026060501`)
 
 ### Objetivo
