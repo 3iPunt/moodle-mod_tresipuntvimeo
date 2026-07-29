@@ -110,8 +110,8 @@ class vimeo {
         if ($this->isauthenticated) {
             $token = get_config('mod_videoconnect', 'access_token');
             if (empty($token) || !is_string($token)) {
-                // get_config devuelve false cuando no existe: sin esta guarda
-                // la asignación a la propiedad string era un TypeError fatal.
+                // Sin esta guarda, el false de get_config cuando no existe el
+                // token era un TypeError fatal al asignarse a string.
                 throw new moodle_exception('accesstoken_missing', 'mod_videoconnect');
             }
             $this->accesstoken = $token;

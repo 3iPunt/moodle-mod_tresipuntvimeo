@@ -114,7 +114,7 @@ final class uploads_test extends advanced_testcase {
         $this->assertSame(1, $summary[uploads::STATE_INCIDENT]);
         $this->assertSame(1, $summary[uploads::STATE_NOVIDEO]);
 
-        // Ámbito de curso: uno nuevo sin actividades no cuenta nada.
+        // El ámbito de curso: uno nuevo sin actividades no cuenta nada.
         $course = $this->getDataGenerator()->create_course();
         $scoped = uploads::get_summary((int) $course->id);
         $this->assertSame(0, array_sum($scoped));

@@ -156,8 +156,8 @@ class videos_table extends table_sql {
         if (in_array($row->state, [uploads::STATE_ERROR, uploads::STATE_INCIDENT], true)) {
             $message = trim($row->http_error_message ?? '');
             if ($message === '') {
-                // error_message guarda claves internas (p. ej. id_video_missing):
-                // mostrar la etiqueta de diagnóstico traducida, nunca la clave.
+                // La columna error_message guarda claves internas (p. ej.
+                // id_video_missing): mostrar la etiqueta traducida, no la clave.
                 $message = $row->uploadstatus !== null
                     ? uploads::get_status_label((int) $row->uploadstatus)
                     : trim($row->error_message ?? '');

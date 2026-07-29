@@ -54,8 +54,7 @@ class upload_retried extends base {
      * @return string
      * @throws coding_exception
      */
-    public static function get_name(): string
-    {
+    public static function get_name(): string {
         return get_string('eventuploadretried', 'mod_videoconnect');
     }
 
