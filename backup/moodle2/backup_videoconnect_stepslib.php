@@ -23,11 +23,17 @@
  */
 
 /**
- * Define all the backup steps that will be used by the backup_videoconnect_activity_task
- */
-
-/**
- * Define the complete videoconnect structure for backup, with file and id annotations
+ * Define the complete videoconnect structure for backup, with file and id annotations.
+ *
+ * The upload queue ({videoconnect_uploads}) is NOT included on purpose: its
+ * rows reference server-local temp file paths that do not exist on the
+ * restore target, so restoring them would only produce dead queue entries.
+ * A restored activity keeps its published video (idvideo + provider) or
+ * starts clean.
+ *
+ * @package    mod_videoconnect
+ * @copyright  2024 Tresipunt
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_videoconnect_activity_structure_step extends backup_activity_structure_step {
     /**
@@ -35,19 +41,13 @@ class backup_videoconnect_activity_structure_step extends backup_activity_struct
      *
      * @return backup_nested_element
      * @throws base_element_struct_exception
-     * @throws base_step_exception
      */
-    protected function define_structure() {
-
-        // To know if we are including userinfo.
-        $userinfo = $this->get_setting_value('userinfo');
+    protected function define_structure(): backup_nested_element {
 
         // Define each element separated.
         $videoconnect = new backup_nested_element('videoconnect', ['id'], [
-            'course', 'name', 'idvideo', 'intro', 'introformat', 'timecreated', 'timemodified']);
-
-        // Build the tree.
-        // (love this).
+            'course', 'name', 'idvideo', 'provider', 'displayinline', 'intro', 'introformat',
+            'timecreated', 'timemodified']);
 
         // Define sources.
         $videoconnect->set_source_table('videoconnect', ['id' => backup::VAR_ACTIVITYID]);

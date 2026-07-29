@@ -28,7 +28,9 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core\output\notification;
 use mod_videoconnect\form\settings_form;
+use mod_videoconnect\videoconnect;
 
 require_once(__DIR__ . '/../../config.php');
 
@@ -62,12 +64,12 @@ if ($data = $mform->get_data()) {
     if (isset($data->whitelist)) {
         // Deshabilitado (disabledIf) cuando usewhitelist está desmarcado:
         // conservar la lista almacenada. Se guarda normalizada y deduplicada.
-        set_config('whitelist', implode("\n", \mod_videoconnect\videoconnect::parse_domains($data->whitelist)), 'mod_videoconnect');
+        set_config('whitelist', implode("\n", videoconnect::parse_domains($data->whitelist)), 'mod_videoconnect');
     }
     // Acepta ID numérico o URL de carpeta de Vimeo; se guarda normalizado
     // (la validación de formato ya la hizo settings_form::validation()).
-    set_config('folderid', \mod_videoconnect\videoconnect::extract_folderid($data->folderid ?? '') ?? '', 'mod_videoconnect');
-    redirect($url, get_string('settingssaved', 'mod_videoconnect'), null, \core\output\notification::NOTIFY_SUCCESS);
+    set_config('folderid', videoconnect::extract_folderid($data->folderid ?? '') ?? '', 'mod_videoconnect');
+    redirect($url, get_string('settingssaved', 'mod_videoconnect'), null, notification::NOTIFY_SUCCESS);
 }
 
 $config = get_config('mod_videoconnect');
@@ -77,7 +79,7 @@ $mform->set_data([
     'is_authenticated' => empty($config->is_authenticated) ? 0 : 1,
     'access_token' => $config->access_token ?? '',
     'scopes' => empty($config->scopes) ? [] : explode(',', $config->scopes),
-    'usewhitelist' => \mod_videoconnect\videoconnect::is_whitelist_enabled() ? 1 : 0,
+    'usewhitelist' => videoconnect::is_whitelist_enabled() ? 1 : 0,
     'whitelist' => $config->whitelist ?? parse_url($CFG->wwwroot, PHP_URL_HOST),
     'folderid' => $config->folderid ?? '0',
 ]);

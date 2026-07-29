@@ -25,6 +25,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+use mod_videoconnect\provider\provider_manager;
+
 require_once($CFG->dirroot . '/course/moodleform_mod.php');
 
 /**
@@ -75,11 +77,7 @@ class mod_videoconnect_mod_form extends moodleform_mod {
         $mform->addHelpButton('name', 'videoconnectname', 'mod_videoconnect');
 
         // Adding the standard "intro" and "introformat" fields.
-        if ($CFG->branch >= 29) {
-            $this->standard_intro_elements();
-        } else {
-            $this->add_intro_editor();
-        }
+        $this->standard_intro_elements();
 
         $mform->addElement(
             'text',
@@ -114,6 +112,16 @@ class mod_videoconnect_mod_form extends moodleform_mod {
             $filemanageroptions
         );
 
+        // Embebido en la página del curso (histórico, default) o solo
+        // dentro de la actividad.
+        $mform->addElement(
+            'advcheckbox',
+            'displayinline',
+            get_string('displayinline', 'mod_videoconnect')
+        );
+        $mform->addHelpButton('displayinline', 'displayinline', 'mod_videoconnect');
+        $mform->setDefault('displayinline', 1);
+
         // Add standard elements.
         $this->standard_coursemodule_elements();
 
@@ -122,32 +130,10 @@ class mod_videoconnect_mod_form extends moodleform_mod {
     }
 
     /**
-     * Extracts the numeric Vimeo video ID from a raw value.
-     *
-     * Accepts a plain numeric ID or a Vimeo video URL (vimeo.com/<id>,
-     * player.vimeo.com/video/<id>, vimeo.com/manage/videos/<id>, ...).
-     * Unlisted videos with a privacy hash are not supported: the module
-     * relies on domain-whitelist embed privacy, not on hashes.
-     *
-     * @param string $value Raw user input.
-     * @return string|null Numeric ID, '' when empty, or null when invalid.
-     */
-    public static function extract_idvideo(string $value): ?string {
-        $value = trim($value);
-        if ($value === '') {
-            return '';
-        }
-        if (preg_match('~^\d+$~', $value)) {
-            return $value;
-        }
-        if (preg_match('~^(?:https?://)?(?:www\.)?(?:player\.)?vimeo\.com/(?:[a-z]+/)*(?:video/)?(\d+)~i', $value, $matches)) {
-            return $matches[1];
-        }
-        return null;
-    }
-
-    /**
      * Validates the form data.
+     *
+     * The video reference (plain ID or pasted URL) is parsed by the active
+     * provider connector: each provider knows its own URL formats.
      *
      * @param array $data
      * @param array $files
@@ -156,7 +142,8 @@ class mod_videoconnect_mod_form extends moodleform_mod {
      */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
-        if (!empty($data['idvideo']) && self::extract_idvideo($data['idvideo']) === null) {
+        if (!empty($data['idvideo'])
+                && provider_manager::get_active()->parse_video_reference($data['idvideo']) === null) {
             $errors['idvideo'] = get_string('idvideo_invalid', 'mod_videoconnect');
         }
         return $errors;
@@ -170,7 +157,7 @@ class mod_videoconnect_mod_form extends moodleform_mod {
     public function data_postprocessing($data) {
         parent::data_postprocessing($data);
         if (isset($data->idvideo)) {
-            $data->idvideo = (string) (self::extract_idvideo($data->idvideo) ?? '');
+            $data->idvideo = (string) (provider_manager::get_active()->parse_video_reference($data->idvideo) ?? '');
         }
     }
 }

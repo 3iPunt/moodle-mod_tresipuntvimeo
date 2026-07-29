@@ -25,6 +25,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+use mod_videoconnect\admin\setting_folderid;
+use mod_videoconnect\admin\setting_whitelist;
+use mod_videoconnect\provider\vimeo_provider;
+
 global $ADMIN, $CFG;
 
 // Carpeta "Video Connect" en Extensiones > Módulos de actividad con sus
@@ -94,7 +98,22 @@ if ($ADMIN->fulltree) {
         '',
         ''
     ));
+    // Igual que en el formulario de gestores: el token solo aplica en modo
+    // Personal Access Token.
+    $settings->hide_if('mod_videoconnect/access_token', 'mod_videoconnect/is_authenticated', 'notchecked');
 
+    // Test de conectividad, junto a las credenciales que valida
+    // (credenciales + scopes concedidos por el proveedor).
+    $testurl = new moodle_url('/mod/videoconnect/testconnection.php', ['return' => 'admin', 'sesskey' => sesskey()]);
+    $settings->add(new admin_setting_heading(
+        'mod_videoconnect/testconnection',
+        '',
+        html_writer::link($testurl, get_string('testconnection', 'mod_videoconnect'),
+            ['class' => 'btn btn-secondary'])
+    ));
+
+    // Lista de scopes con fuente única en el conector (evita la divergencia
+    // que hubo entre esta página y el formulario de gestores).
     $settings->add(new admin_setting_configmulticheckbox(
         'mod_videoconnect/scopes',
         get_string('scopes', 'mod_videoconnect'),
@@ -103,18 +122,7 @@ if ($ADMIN->fulltree) {
             'public' => 'public',
             'private' => 'private',
         ],
-        [
-            'public' => 'public',
-            'private' => 'private',
-            'purchased' => 'purchased',
-            'create' => 'create',
-            'edit' => 'edit',
-            'delete' => 'delete',
-            'interact' => 'interact',
-            'upload' => 'upload',
-            'promo_codes' => 'promo_codes',
-            'video_files' => 'video_files',
-        ]
+        array_combine(vimeo_provider::SCOPES, vimeo_provider::SCOPES)
     ));
 
     $settings->add(new admin_setting_configcheckbox(
@@ -124,7 +132,7 @@ if ($ADMIN->fulltree) {
         1
     ));
 
-    $settings->add(new \mod_videoconnect\admin\setting_whitelist(
+    $settings->add(new setting_whitelist(
         'mod_videoconnect/whitelist',
         get_string('whitelist', 'mod_videoconnect'),
         get_string('whitelist_desc', 'mod_videoconnect'),
@@ -132,7 +140,7 @@ if ($ADMIN->fulltree) {
     ));
     $settings->hide_if('mod_videoconnect/whitelist', 'mod_videoconnect/usewhitelist', 'notchecked');
 
-    $settings->add(new \mod_videoconnect\admin\setting_folderid(
+    $settings->add(new setting_folderid(
         'mod_videoconnect/folderid',
         get_string('folderid', 'mod_videoconnect'),
         get_string('folderid_desc', 'mod_videoconnect'),

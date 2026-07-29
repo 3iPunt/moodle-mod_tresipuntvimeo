@@ -32,6 +32,7 @@ use moodle_exception;
 use moodle_url;
 use Vimeo\Exceptions\VimeoRequestException;
 use Vimeo\Exceptions\VimeoUploadException;
+use Vimeo\Vimeo as vimeoclient;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -51,20 +52,20 @@ class vimeo {
     /** @var int Timeout */
     public const TIMEOUT = 30;
 
-    /** @var string Client ID */
+    /** @var string|false Client ID (false when not configured). */
     protected mixed $clientid;
 
-    /** @var string Client Secret */
+    /** @var string|false Client Secret (false when not configured). */
     protected mixed $clientsecret;
 
-    /** @var string Is authenticated? */
+    /** @var bool|string|false Whether a Personal Access Token is used. */
     protected mixed $isauthenticated;
 
     /** @var string[] Scopes */
     protected array $scopes = ['public', 'private', 'upload'];
 
-    /** @var \Vimeo\Vimeo Vimeo */
-    protected \Vimeo\Vimeo $vimeo;
+    /** @var vimeoclient Vimeo API client. */
+    protected vimeoclient $vimeo;
 
     /** @var string Access Token */
     protected string $accesstoken;
@@ -94,11 +95,8 @@ class vimeo {
         if (!empty($scopes)) {
             $this->scopes = explode(',', $scopes);
         } else {
-            $moodleurl = new moodle_url('/admin/settings.php?section=modsettingvideoconnect');
-            throw new moodle_exception(
-                    get_string('scopes_not_exist', 'mod_videoconnect') .
-                    '. ' . $moodleurl->out(false)
-            );
+            $moodleurl = new moodle_url('/admin/settings.php', ['section' => 'modsettingvideoconnect']);
+            throw new moodle_exception('scopes_not_exist', 'mod_videoconnect', $moodleurl->out(false));
         }
     }
 
@@ -110,16 +108,26 @@ class vimeo {
      */
     protected function init_vimeo(): void {
         if ($this->isauthenticated) {
-            $this->accesstoken = get_config('mod_videoconnect', 'access_token');
-            $this->vimeo = new \Vimeo\Vimeo($this->clientid, $this->clientsecret, $this->accesstoken);
+            $token = get_config('mod_videoconnect', 'access_token');
+            if (empty($token) || !is_string($token)) {
+                // Sin esta guarda, el false de get_config cuando no existe el
+                // token era un TypeError fatal al asignarse a string.
+                throw new moodle_exception('accesstoken_missing', 'mod_videoconnect');
+            }
+            $this->accesstoken = $token;
+            $this->vimeo = new vimeoclient($this->clientid, $this->clientsecret, $this->accesstoken);
         } else {
-            $this->vimeo = new \Vimeo\Vimeo($this->clientid, $this->clientsecret);
+            $this->vimeo = new vimeoclient($this->clientid, $this->clientsecret);
             $token = $this->vimeo->clientCredentials($this->scopes);
             if (isset($token['body']['access_token'])) {
                 $this->accesstoken = $token['body']['access_token'];
                 $this->vimeo->setToken($this->accesstoken);
             } else {
-                throw new moodle_exception($token["body"]["error_code"] . ': ' . $token["body"]["error"]);
+                // Respuesta sin token: componer el detalle con lo que haya
+                // (el cuerpo puede no traer error_code/error).
+                $detail = ($token['body']['error_code'] ?? '?') . ': '
+                    . ($token['body']['error'] ?? json_encode($token['body'] ?? null));
+                throw new moodle_exception('clientcredentials_failed', 'mod_videoconnect', '', $detail);
             }
         }
     }
@@ -174,6 +182,38 @@ class vimeo {
         $url = 'https://api.vimeo.com/me/projects/' . $folderid . '/videos/' . $videoid;
         $params = [];
         return $this->curl_request($url, $params);
+    }
+
+    /**
+     * Verifies the access token against the Vimeo API.
+     *
+     * GET /oauth/verify validates the token and returns its metadata
+     * (application, user and granted scopes) — response::$data carries the
+     * raw JSON body on success.
+     *
+     * @return response
+     */
+    public function verify(): response {
+        try {
+            $curl = new curl();
+            $curl->setHeader([
+                'Content-type: application/json',
+                'Authorization: Bearer ' . $this->accesstoken,
+            ]);
+            $result = $curl->get('https://api.vimeo.com/oauth/verify', [], $this->get_options_curl());
+            $info = $curl->get_info();
+            $httpcode = (int) ($info['http_code'] ?? 0);
+            if ($httpcode >= 200 && $httpcode < 300) {
+                return new response(true, (string) $result, new error(0, ''));
+            }
+            $decoded = json_decode((string) $result, true);
+            $message = $decoded['developer_message']
+                ?? $decoded['error']
+                ?? ('HTTP ' . $httpcode . ': ' . substr((string) $result, 0, 200));
+            return new response(false, '', new error(4004, $message));
+        } catch (Exception $e) {
+            return new response(false, '', new error(4001, $e->getMessage()));
+        }
     }
 
     /**

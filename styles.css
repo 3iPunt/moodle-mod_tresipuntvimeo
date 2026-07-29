@@ -1,84 +1,747 @@
-div[data-region="mod_videoconnect"] .iframe_container {
-    display: flex;
-    align-content: center;
-    justify-content: center;
-    border: none;
+/* mod_videoconnect — Tresipunt Design System tokens and components.
+   Everything is scoped to the plugin regions; layout spacing uses gap on
+   flex/grid containers (no ml-*\/ms-* utilities) and all measures are
+   relative so the screens degrade gracefully below 767.98px. */
+
+.mod_videoconnect-view,
+.mod_videoconnect-panel {
+    --vc-primary: #f84015;
+    --vc-primary-hover: #da3208;
+    --vc-success-bg: #e7f6ee;
+    --vc-success-fg: #1f9d57;
+    --vc-warning-bg: #fcf3df;
+    --vc-warning-fg: #8a6410;
+    --vc-warning-border: #f1d48a;
+    --vc-danger-bg: #fceae8;
+    --vc-danger-fg: #e23b2e;
+    --vc-teal-bg: #e6f7f8;
+    --vc-teal-fg: #008791;
+    --vc-neutral-bg: #ececed;
+    --vc-neutral-fg: #545457;
+    --vc-muted-bg: #f4f4f5;
+    --vc-muted-fg: #6f6f73;
+    --vc-border: #ddddDF;
+    --vc-radius: 0.75rem;
 }
 
-div[data-region="mod_videoconnect"] .intro {
-    padding: 60px;
+/* -------------------------------------------------- estructura de página */
+
+/* Mismo patrón que local_tresipuntimportgc: la pantalla del plugin es una
+   única tarjeta blanca sobre el fondo de la página. Boost capa .main-inner
+   por debajo del ancho de trabajo: lo ampliamos solo en estas páginas. */
+#page-mod-videoconnect-panel .main-inner {
+    max-width: 1102px; /* 1038px de contenido + padding lateral del tema. */
 }
 
-div[data-region="mod_videoconnect"] .alert {
-    margin: 60px;
+/* Algunos temas pintan #region-main como tarjeta blanca con !important;
+   nuestra pantalla ya trae la suya. Doble id para ganar especificidad. */
+#page-mod-videoconnect-panel #region-main {
+    background-color: transparent !important;
 }
 
-div[data-region="mod_videoconnect"] .response {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-div[data-region="mod_videoconnect"] .response .card-content {
-    background-color: black;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    width: 640px;
-    height: 360px;
+.mod_videoconnect-panel {
+    font-size: 0.95rem;
+    max-width: 1038px;
+    margin: 2rem auto 0;
+    box-shadow: rgba(100, 100, 111, 0.2) 0 7px 29px 0;
     padding: 50px;
-    text-align: center;
+    border-radius: 20px;
+    background-color: #fff;
 }
 
-div[data-region="mod_videoconnect"] .response .card-content .title {
-    font-size: 55px;
+/* Norma: icono + texto siempre centrados en altura (flex, sin baselines). */
+.mod_videoconnect-panel .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    line-height: 1.2;
+}
+
+.mod_videoconnect-panel .btn .fa {
+    font-size: 0.9em;
+    line-height: 1;
+}
+
+/* Botones de texto: sin subrayado, hover con fondo suave (norma familia). */
+.mod_videoconnect-panel .btn-link {
+    text-decoration: none;
+    color: #545457;
+    font-weight: 500;
+    border-radius: 8px;
+}
+
+.mod_videoconnect-panel .btn-link:hover {
+    text-decoration: none;
+    background: #f4f4f5;
+    color: #1e1e1f;
+}
+
+.mod_videoconnect-panel a {
+    text-decoration: none;
+}
+
+.mod_videoconnect-panel a:hover {
+    text-decoration: underline;
+}
+
+.mod_videoconnect-panel .vc-link {
     font-weight: 600;
 }
 
-div[data-region="mod_videoconnect"] .response .card-content .description {
-    font-size: 24px;
+/* ---------------------------------------------------------------- badges */
+
+.vc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.7rem 0.25rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
-/* Control panel (TIPVIDEOC-8). */
-div[data-region="mod_videoconnect-panel"] .card-counter {
-    min-width: 9.5rem;
-    transition: box-shadow 0.15s ease-in-out, transform 0.15s ease-in-out;
+.vc-badge-mini {
+    font-size: 0.6875rem;
+    padding: 0.125rem 0.5rem 0.125rem 0.4rem;
 }
 
-div[data-region="mod_videoconnect-panel"] .card-counter:hover {
-    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
+.vc-badge-success { background: var(--vc-success-bg); color: var(--vc-success-fg); }
+.vc-badge-warning { background: var(--vc-warning-bg); color: var(--vc-warning-fg); }
+.vc-badge-danger { background: var(--vc-danger-bg); color: var(--vc-danger-fg); }
+.vc-badge-teal { background: var(--vc-teal-bg); color: var(--vc-teal-fg); }
+.vc-badge-neutral { background: var(--vc-neutral-bg); color: var(--vc-neutral-fg); }
+.vc-badge-muted { background: var(--vc-muted-bg); color: var(--vc-muted-fg); }
+
+.vc-tone-success { color: var(--vc-success-fg); }
+.vc-tone-danger { color: var(--vc-danger-fg); }
+.vc-tone-teal { color: var(--vc-teal-fg); }
+.vc-tone-neutral { color: var(--vc-neutral-fg); }
+.vc-tone-brand { color: var(--vc-primary); }
+
+/* ------------------------------------------------- view page (player/C3) */
+
+.mod_videoconnect-view .vc-embed {
+    position: relative;
+    width: 100%;
+    max-width: 60rem;
+    margin: 0 auto;
+    border-radius: var(--vc-radius);
+    overflow: hidden;
 }
 
-div[data-region="mod_videoconnect-panel"] .card-counter.active {
-    border-width: 2px;
+/* Proporción 16:9 también donde no cargue ratio/embed-responsive. */
+.mod_videoconnect-view .vc-embed::before {
+    content: "";
+    display: block;
+    padding-top: 56.25%;
 }
 
-div[data-region="mod_videoconnect-panel"] .form-autocomplete-selection {
-    margin-top: 0.25rem;
+.mod_videoconnect-view .vc-embed > iframe,
+.mod_videoconnect-view .vc-embed > .vc-statecard {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
 }
 
-div[data-region="mod_videoconnect-panel"] .vc-course-scope {
-    min-width: 16rem;
-    max-width: 22rem;
+.mod_videoconnect-view .vc-statecard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    text-align: center;
+    padding: 1.5rem;
+    background: radial-gradient(120% 120% at 85% 0%, #2a2a2d 0%, #17171a 62%);
+    color: #fff;
 }
 
-div[data-region="mod_videoconnect-panel"] .vc-filter-state {
-    min-width: 14rem;
+.mod_videoconnect-view .vc-statecard-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: clamp(3.25rem, 7vw, 4.25rem);
+    height: clamp(3.25rem, 7vw, 4.25rem);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.09);
+    font-size: 1.75rem;
 }
 
-div[data-region="mod_videoconnect-panel"] .vc-filter-search {
-    min-width: 18rem;
+.mod_videoconnect-view .vc-statecard-icon.vc-tone-teal { color: #54c9cf; background: rgba(0, 166, 176, 0.18); }
+.mod_videoconnect-view .vc-statecard-icon.vc-tone-danger { color: #ff8a75; background: rgba(226, 59, 46, 0.18); }
+.mod_videoconnect-view .vc-statecard-icon.vc-tone-neutral { color: #c6c6c9; }
+
+.mod_videoconnect-view .vc-statecard-title {
+    font-weight: 700;
+    font-size: clamp(1.125rem, 3vw, 1.625rem);
+    line-height: 1.2;
+    max-width: 20ch;
 }
 
-div[data-region="mod_videoconnect-panel"] .vc-filter-date {
-    min-width: 10.5rem;
+.mod_videoconnect-view .vc-statecard-sub {
+    font-size: clamp(0.8125rem, 1.6vw, 0.9375rem);
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.72);
+    max-width: 46ch;
 }
 
-div[data-region="mod_videoconnect-panel"] .card .generaltable {
+.mod_videoconnect-view .vc-statecard-cause {
+    font-size: clamp(0.75rem, 1.5vw, 0.84375rem);
+    color: rgba(255, 255, 255, 0.6);
+    max-width: 46ch;
+}
+
+.mod_videoconnect-view .vc-statecard-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.35rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.mod_videoconnect-view .vc-statecard-link:hover { color: #ffbca6; }
+
+.mod_videoconnect-view .vc-view-intro {
+    max-width: 60rem;
+    margin: 1.125rem auto 0;
+}
+
+/* ------------------------------------------------------- panel: header */
+
+/* Cabecera co-brandada como sección de la tarjeta (patrón importgc):
+   divisor inferior, sin card propia. */
+.mod_videoconnect-panel .vc-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.625rem;
+    padding-bottom: 1.25rem;
+}
+
+.mod_videoconnect-panel .vc-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex: none;
+}
+
+.mod_videoconnect-panel .vc-header-logo {
+    height: 2.7rem;
+    width: auto;
+    display: block;
+    max-width: 100%;
+}
+
+.mod_videoconnect-panel .vc-header-divider {
+    width: 1px;
+    height: 1.875rem;
+    background: var(--vc-border);
+    display: block;
+}
+
+.mod_videoconnect-panel .vc-header-text {
+    min-width: 0;
+    flex: 1 1 16rem;
+    border-left: 1px solid var(--vc-border);
+    padding-left: 1.375rem;
+    margin-left: -0.125rem;
+}
+
+/* Las acciones van siempre en su propia línea, bajo la marca y el título,
+   alineadas a la derecha. */
+.mod_videoconnect-panel .vc-header > .vc-header-actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+    border-top: 1px solid rgb(135 135 135 / 14%);
+    padding-top: 1.5rem;
+    margin-top: 0.7rem;
+    margin-bottom: 1rem;
+}
+
+.mod_videoconnect-panel .vc-header-title {
+    margin: 0;
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.mod_videoconnect-panel .vc-header-desc {
+    margin: 0.2rem 0 0;
+    font-size: 1rem;
+    color: var(--vc-muted-fg);
+}
+
+.mod_videoconnect-panel .vc-header-title a {
+    color: inherit;
+}
+
+.mod_videoconnect-panel .vc-header-title a:hover {
+    color: var(--vc-primary);
+    text-decoration: none;
+}
+
+/* Icono de enlace externo tras el texto: siempre gris, sin cambio en hover
+   (norma fechada 23/07/2026 del design system compartido). */
+.mod_videoconnect-panel .vc-header-extlink {
+    font-size: 0.7em;
+    color: #9a9a9e;
+    vertical-align: middle;
+}
+
+.mod_videoconnect-panel .vc-header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.4rem;
+    font-size: 0.84375rem;
+}
+
+.mod_videoconnect-panel .vc-meta-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--vc-border);
+    display: inline-block;
+}
+
+.mod_videoconnect-panel .vc-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: none;
+}
+
+.mod_videoconnect-panel .vc-updated {
+    text-align: right;
+    line-height: 1.35;
+}
+
+.mod_videoconnect-panel .vc-updated-label {
+    display: block;
+    font-size: 0.71875rem;
+    color: var(--vc-muted-fg);
+}
+
+.mod_videoconnect-panel .vc-updated-time {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.mod_videoconnect-panel .vc-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+}
+
+.mod_videoconnect-panel .vc-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-weight: 600;
+    font-size: 0.84375rem;
+    color: var(--vc-muted-fg);
+    margin-bottom: 0.9rem;
+}
+
+.mod_videoconnect-panel .vc-back:hover { color: var(--vc-primary); text-decoration: none; }
+
+/* -------------------------------------------------------- panel: alert */
+
+.mod_videoconnect-panel .vc-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    border-radius: var(--vc-radius);
+    margin-bottom: 1.25rem;
+}
+
+.mod_videoconnect-panel .vc-alert .vc-alert-title {
+    display: block;
+    margin-bottom: 0.125rem;
+}
+
+/* --------------------------------------------------------- panel: KPIs */
+
+.mod_videoconnect-panel .vc-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.mod_videoconnect-panel .vc-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    padding: 0.9rem;
+    border: 2px solid var(--vc-border);
+    border-radius: var(--vc-radius);
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.12s ease-in-out, box-shadow 0.12s ease-in-out;
+}
+
+.mod_videoconnect-panel .vc-kpi:hover { text-decoration: none; }
+.mod_videoconnect-panel .vc-kpi-success:hover, .mod_videoconnect-panel .vc-kpi-success.active { border-color: var(--vc-success-fg); }
+.mod_videoconnect-panel .vc-kpi-warning:hover, .mod_videoconnect-panel .vc-kpi-warning.active { border-color: var(--vc-warning-fg); }
+.mod_videoconnect-panel .vc-kpi-danger:hover, .mod_videoconnect-panel .vc-kpi-danger.active { border-color: var(--vc-danger-fg); }
+.mod_videoconnect-panel .vc-kpi-neutral:hover, .mod_videoconnect-panel .vc-kpi-neutral.active { border-color: var(--vc-neutral-fg); }
+.mod_videoconnect-panel .vc-kpi-muted:hover, .mod_videoconnect-panel .vc-kpi-muted.active { border-color: var(--vc-muted-fg); }
+.mod_videoconnect-panel .vc-kpi.active { box-shadow: 0 0.375rem 1.125rem rgba(0, 0, 0, 0.08); }
+
+.mod_videoconnect-panel .vc-kpi-count {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Dentro del KPI la etiqueta puede ser larga ("Publicado con incidencia"):
+   envolver en varias líneas en vez de desbordar la tarjeta. */
+.mod_videoconnect-panel .vc-kpi .vc-badge {
+    align-self: flex-start;
+    white-space: normal;
+    max-width: 100%;
+    line-height: 1.3;
+    align-items: flex-start;
+}
+
+.mod_videoconnect-panel .vc-kpi .vc-badge .fa {
+    margin-top: 0.15em;
+}
+
+/* ------------------------------------------------------ panel: filters */
+
+/* Rejilla de 6 columnas: fila 1 = curso/estado/búsqueda (2 columnas cada
+   uno); fila 2 = fechas + acciones a la derecha. En anchos medios pasa a
+   4 columnas y en móvil apila (media queries al final del archivo). */
+.mod_videoconnect-panel .vc-filters-toggle {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+}
+
+.mod_videoconnect-panel .vc-filters-toggle .vc-toggle-chevron {
+    transition: transform 0.15s ease-in-out;
+}
+
+.mod_videoconnect-panel .vc-filters-toggle [aria-expanded="true"] .vc-toggle-chevron {
+    transform: rotate(180deg);
+}
+
+.mod_videoconnect-panel .vc-filters {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.85rem 1rem;
+    align-items: end;
+    padding: 1rem 1.125rem 2.2rem;
+    border-radius: var(--vc-radius);
+    margin-bottom: 0.75rem;
+}
+
+.mod_videoconnect-panel .vc-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
     margin-bottom: 0;
+    min-width: 0;
 }
 
+.mod_videoconnect-panel .vc-filter-label {
+    font-size: 0.71875rem;
+    font-weight: 600;
+    color: var(--vc-muted-fg);
+}
+
+.mod_videoconnect-panel .vc-filter-course { grid-column: span 2; }
+.mod_videoconnect-panel .vc-filter-state { grid-column: span 2; }
+.mod_videoconnect-panel .vc-filter-search { grid-column: span 2; }
+.mod_videoconnect-panel .vc-filter-date { grid-column: span 1; }
+
+.mod_videoconnect-panel .vc-filters .form-control,
+.mod_videoconnect-panel .vc-filters .form-select,
+.mod_videoconnect-panel .vc-filters .custom-select {
+    width: 100%;
+}
+
+.mod_videoconnect-panel .vc-filter-actions {
+    grid-column: span 4;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+@media (max-width: 991.98px) {
+    .mod_videoconnect-panel .vc-filters {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .mod_videoconnect-panel .vc-filter-search { grid-column: span 4; }
+    .mod_videoconnect-panel .vc-filter-date { grid-column: span 2; }
+    .mod_videoconnect-panel .vc-filter-actions { grid-column: span 4; }
+}
+
+/* El widget de autocompletado del core se inyecta como hermano del select:
+   ocupar el ancho del filtro; el curso activo se ve en los chips (compactos)
+   y como placeholder del input (lo pone el AMD). */
+.mod_videoconnect-panel .vc-filter-course .form-autocomplete-input {
+    display: block;
+    width: 100%;
+    margin: 0;
+}
+
+.mod_videoconnect-panel .vc-filter-course .form-autocomplete-input input {
+    width: 100%;
+}
+
+/* Chips de selección: compactos y separados del input. El badge interno
+   lleva font-size:100% inline, así que hereda este tamaño sin !important. */
+.mod_videoconnect-panel .vc-filter-course .form-autocomplete-selection {
+    margin: 1rem 0 0.25rem;
+    font-size: 0.75rem;
+}
+
+
+/* -------------------------------------------------------- panel: table */
+
+.mod_videoconnect-panel .vc-table-card {
+    border-radius: var(--vc-radius);
+    overflow: hidden;
+}
+
+.mod_videoconnect-panel .vc-table-card .card-body {
+    overflow-x: auto;
+    padding: 0;
+}
+
+.mod_videoconnect-panel .vc-table-card .generaltable {
+    margin-bottom: 0;
+    width: 100%;
+}
+
+/* Cabecera de tabla del design system: versalitas pequeñas sobre fondo
+   hundido, sin los bordes exteriores (los pone la card). */
+.mod_videoconnect-panel .generaltable thead th {
+    background: var(--vc-muted-bg);
+    border-top: 0;
+    border-bottom: 1px solid var(--vc-border);
+    font-size: 0.71875rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--vc-muted-fg);
+    padding: 0.7rem 1rem;
+    white-space: nowrap;
+}
+
+.mod_videoconnect-panel .generaltable thead th a {
+    color: inherit;
+}
+
+.mod_videoconnect-panel .generaltable tbody td {
+    vertical-align: middle;
+    padding: 0.8rem 1rem;
+    border-top: 0;
+    border-bottom: 1px solid #ececed;
+    font-size: 0.84375rem;
+}
+
+.mod_videoconnect-panel .generaltable tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.mod_videoconnect-panel .generaltable tbody tr:hover td {
+    background: #fafafa;
+}
+
+.mod_videoconnect-panel .vc-table-card .paging,
+.mod_videoconnect-panel .vc-table-card .pagination {
+    padding: 0.75rem 1rem;
+    margin: 0;
+}
+
+.mod_videoconnect-panel .vc-row-title {
+    font-weight: 600;
+    color: #1e1e1f;
+}
+
+.mod_videoconnect-panel .vc-row-title:hover {
+    color: var(--vc-primary);
+    text-decoration: none;
+}
+
+.mod_videoconnect-panel .vc-row-sub { margin-top: 0.125rem; }
+
+.mod_videoconnect-panel .vc-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+}
+
+.mod_videoconnect-panel .vc-attempt-note {
+    max-width: 26rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mod_videoconnect-panel .vc-attempt-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.mod_videoconnect-panel .vc-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 600;
+    font-size: 0.8125rem;
+}
+
+.mod_videoconnect-panel .vc-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--vc-muted-fg);
+    margin: 0 0 0.75rem;
+}
+
+/* --------------------------------------------------- panel: diagnosis */
+
+.mod_videoconnect-panel .vc-diag {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--vc-border);
+    border-radius: var(--vc-radius);
+    margin-bottom: 1.125rem;
+}
+
+.mod_videoconnect-panel .vc-diag > .fa { margin-top: 0.125rem; }
+.mod_videoconnect-panel .vc-diag-title { display: block; font-size: 0.84375rem; }
+.mod_videoconnect-panel .vc-diag-body { margin: 0.125rem 0 0; font-size: 0.8125rem; line-height: 1.5; }
+
+.mod_videoconnect-panel .vc-diag-warning { background: var(--vc-warning-bg); border-color: var(--vc-warning-border); color: var(--vc-warning-fg); }
+.mod_videoconnect-panel .vc-diag-danger { background: var(--vc-danger-bg); border-color: #f3b4ae; color: #9a241b; }
+.mod_videoconnect-panel .vc-diag-teal { background: var(--vc-teal-bg); border-color: #a9e0e4; color: #00757e; }
+.mod_videoconnect-panel .vc-diag-muted { background: var(--vc-muted-bg); color: var(--vc-muted-fg); }
+
+/* ------------------------------------------------------- empty states */
+
+.mod_videoconnect-panel .vc-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 3.25rem 1.5rem;
+    text-align: center;
+}
+
+.mod_videoconnect-panel .vc-empty-dashed {
+    background: #fff;
+    border: 1px dashed var(--vc-border);
+    border-radius: var(--vc-radius);
+}
+
+.mod_videoconnect-panel .vc-empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 999px;
+    background: var(--vc-muted-bg);
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.mod_videoconnect-panel .vc-empty-icon.vc-tone-brand { background: #fff1ed; }
+
+.mod_videoconnect-panel .vc-empty-title {
+    font-weight: 600;
+    font-size: 1.0625rem;
+}
+
+.mod_videoconnect-panel .vc-empty-sub {
+    margin: 0;
+    font-size: 0.84375rem;
+    color: var(--vc-muted-fg);
+    max-width: 28rem;
+}
+
+/* ---------------------------------------------------------- responsive */
+
+@media (max-width: 767.98px) {
+    .mod_videoconnect-panel {
+        padding: 1.25rem;
+        border-radius: 0.75rem;
+    }
+
+    .mod_videoconnect-panel .vc-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .mod_videoconnect-panel .vc-header-text {
+        border-left: 0;
+        padding-left: 0;
+    }
+
+    .mod_videoconnect-panel .vc-header-actions {
+        justify-content: space-between;
+    }
+
+    .mod_videoconnect-panel .vc-kpis {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mod_videoconnect-panel .vc-filters-toggle {
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .mod_videoconnect-panel .vc-filters {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .mod_videoconnect-panel .vc-filter-course,
+    .mod_videoconnect-panel .vc-filter-state,
+    .mod_videoconnect-panel .vc-filter-search,
+    .mod_videoconnect-panel .vc-filter-date,
+    .mod_videoconnect-panel .vc-filter-actions {
+        grid-column: span 1;
+    }
+
+    .mod_videoconnect-panel .vc-filter-actions .btn {
+        flex: 1 1 auto;
+    }
+
+    .mod_videoconnect-panel .vc-attempt-note {
+        max-width: 12rem;
+    }
+}

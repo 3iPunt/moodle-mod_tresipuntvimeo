@@ -1,0 +1,50 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_videoconnect/page_header
+
+    Co-branded page header (C10): Tresipunt logo + active provider logo on
+    the left, page title and description on the right.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * none
+
+    Context variables required for this template:
+    * logotresipunt: string - URL of the Tresipunt logo.
+    * logoprovider: string - URL of the active provider logo.
+    * providername: string - Name of the active video provider.
+    * headertitle: string - Page title.
+    * headerdesc: string - One/two line page description.
+
+    Example context (json):
+    {
+        "logotresipunt": "#",
+        "logoprovider": "#",
+        "providername": "Vimeo",
+        "headertitle": "Video Connect control panel",
+        "headerdesc": "Every campus video with its publication state."
+    }
+}}
+<div class="vc-header-brand">
+    <img src="{{logotresipunt}}" alt="Tresipunt" class="vc-header-logo">
+    <span class="vc-header-divider" aria-hidden="true"></span>
+    <img src="{{logoprovider}}" alt="{{#str}} provideralt, mod_videoconnect, {{providername}} {{/str}}" class="vc-header-logo">
+</div>
+<div class="vc-header-text">
+    <h1 class="vc-header-title">{{headertitle}}</h1>
+    <p class="vc-header-desc">{{headerdesc}}</p>
+</div>

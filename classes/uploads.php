@@ -25,8 +25,13 @@
 
 namespace mod_videoconnect;
 
+use coding_exception;
+use context_module;
 use dml_exception;
+use mod_videoconnect\event\upload_discarded;
+use mod_videoconnect\event\upload_retried;
 use mod_videoconnect_mod_form;
+use moodle_exception;
 use stdClass;
 
 /**
@@ -68,7 +73,9 @@ class uploads {
     /** @var int Status indicating error with folder */
     const STATUS_UPLOADING_ERROR_FOLDER = 9;
 
-    /** @var array Error messages */
+    /** @var array Machine codes persisted in {videoconnect_uploads}.error_message,
+     * indexed by status. Historically they were lang string ids; today the UI
+     * renders the uploadstatus_N labels and these are diagnostic codes only. */
     const ERROR_MESSAGE = [
         'filepath_not_found',
         'not_executed',
@@ -82,8 +89,15 @@ class uploads {
         'error_folder',
     ];
 
-    /** @var int Error code for no file path */
-    const CODE_NOT_FILEPATH = 10001;
+    /** @var int[] Statuses that allow a retry (failed uploads). */
+    const RETRYABLE_STATUSES = [self::STATUS_ERROR_UPLOADING, self::STATUS_UPLOADING_VIDEOID_MISSING];
+
+    /** @var int[] Statuses that allow a discard (queued or failed; never mid-upload). */
+    const DISCARDABLE_STATUSES = [
+        self::STATUS_NOT_EXECUTED,
+        self::STATUS_ERROR_UPLOADING,
+        self::STATUS_UPLOADING_VIDEOID_MISSING,
+    ];
 
     /** @var string Derived state: video published and playable. */
     const STATE_PUBLISHED = 'published';
@@ -149,6 +163,7 @@ class uploads {
              JOIN {course} c ON c.id = v.course
              JOIN {modules} m ON m.name = :vcmodname
              JOIN {course_modules} cm ON cm.instance = v.id AND cm.module = m.id
+                  AND cm.deletioninprogress = 0
              LEFT JOIN {videoconnect_uploads} u ON u.id = (
                  SELECT MAX(u2.id) FROM {videoconnect_uploads} u2 WHERE u2.instance = v.id
              )',
@@ -188,7 +203,7 @@ class uploads {
      *
      * @param string $state One of self::STATES.
      * @return string
-     * @throws \coding_exception
+     * @throws coding_exception
      */
     public static function get_state_label(string $state): string {
         return get_string('state_' . $state, 'mod_videoconnect');
@@ -202,7 +217,7 @@ class uploads {
      *
      * @param int $status One of the STATUS_* constants.
      * @return string
-     * @throws \coding_exception
+     * @throws coding_exception
      */
     public static function get_status_label(int $status): string {
         if ($status < 0 || $status >= count(self::ERROR_MESSAGE)) {
@@ -218,20 +233,30 @@ class uploads {
      * @return stdClass[]
      * @throws dml_exception
      */
-    public static function get_attempts(int $instanceid): array {
+    public static function get_attempts(int $instanceid, int $limit = 100): array {
         global $DB;
-        return $DB->get_records('videoconnect_uploads', ['instance' => $instanceid], 'timecreated DESC, id DESC');
+        // Acotado: el detalle muestra el historial reciente; una actividad
+        // con cientos de reintentos no debe cargarlo entero en memoria.
+        return $DB->get_records(
+            'videoconnect_uploads',
+            ['instance' => $instanceid],
+            'timecreated DESC, id DESC',
+            '*',
+            0,
+            $limit
+        );
     }
 
-    /** @var int[] Statuses that allow a retry (failed uploads). */
-    const RETRYABLE_STATUSES = [self::STATUS_ERROR_UPLOADING, self::STATUS_UPLOADING_VIDEOID_MISSING];
-
-    /** @var int[] Statuses that allow a discard (queued or failed; never mid-upload). */
-    const DISCARDABLE_STATUSES = [
-        self::STATUS_NOT_EXECUTED,
-        self::STATUS_ERROR_UPLOADING,
-        self::STATUS_UPLOADING_VIDEOID_MISSING,
-    ];
+    /**
+     * Deletes the temp file of an upload attempt, if it still exists.
+     *
+     * @param stdClass $upload {videoconnect_uploads} row.
+     */
+    public static function delete_temp_file(stdClass $upload): void {
+        if (!empty($upload->filepath) && is_file($upload->filepath)) {
+            unlink($upload->filepath);
+        }
+    }
 
     /**
      * Whether an upload attempt can be requeued.
@@ -289,7 +314,7 @@ class uploads {
      * would race with the cron task.
      *
      * @param int $uploadid {videoconnect_uploads} id.
-     * @throws \moodle_exception When the attempt is not discardable.
+     * @throws moodle_exception When the attempt is not discardable.
      * @throws dml_exception
      */
     public static function discard(int $uploadid): void {
@@ -342,7 +367,9 @@ class uploads {
         $records = $DB->get_records(
             'videoconnect_uploads',
             ['instance' => $instanceid],
-            'timecreated DESC',
+            // Desempate por id: descartar e insertar caben en el mismo
+            // segundo y sin él podía devolverse la fila descartada.
+            'timecreated DESC, id DESC',
             '*',
             0,
             1
