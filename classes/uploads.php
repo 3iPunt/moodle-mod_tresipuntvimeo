@@ -73,7 +73,9 @@ class uploads {
     /** @var int Status indicating error with folder */
     const STATUS_UPLOADING_ERROR_FOLDER = 9;
 
-    /** @var array Error messages */
+    /** @var array Machine codes persisted in {videoconnect_uploads}.error_message,
+     * indexed by status. Historically they were lang string ids; today the UI
+     * renders the uploadstatus_N labels and these are diagnostic codes only. */
     const ERROR_MESSAGE = [
         'filepath_not_found',
         'not_executed',
